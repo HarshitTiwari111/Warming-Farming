@@ -14,7 +14,8 @@ exports.getKeywords = asyncHandler(async (req, res) => {
     .paginate();
 
   const keywords = await features.query.populate('campaign', 'campaignName');
-  const total = await Keyword.countDocuments(filter);
+  const countFilter = features.searchFilter ? { ...filter, ...features.searchFilter } : filter;
+  const total = await Keyword.countDocuments(countFilter);
 
   res.json({
     success: true,
@@ -33,6 +34,9 @@ exports.createKeyword = asyncHandler(async (req, res) => {
 
 exports.createBulkKeywords = asyncHandler(async (req, res) => {
   const { keywords } = req.body;
+  if (!Array.isArray(keywords) || keywords.length === 0) {
+    return res.status(400).json({ success: false, message: 'keywords must be a non-empty array' });
+  }
   const keywordDocs = keywords.map(k => ({
     ...k,
     campaign: req.params.campaignId,

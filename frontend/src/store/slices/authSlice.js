@@ -31,6 +31,19 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
   }
 })
 
+export const logoutAsync = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+  try {
+    const refreshToken = localStorage.getItem('refreshToken')
+    await api.post('/auth/logout', { refreshToken })
+  } catch (error) {
+    // Ignore logout API errors
+  } finally {
+    localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('user')
+  }
+})
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -43,11 +56,6 @@ const authSlice = createSlice({
   },
   reducers: {
     logout: (state) => {
-      const refreshToken = localStorage.getItem('refreshToken')
-      api.post('/auth/logout', { refreshToken }).catch(() => {})
-      localStorage.removeItem('token')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('user')
       state.user = null
       state.token = null
       state.isAuthenticated = false
@@ -89,8 +97,15 @@ const authSlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
+      .addCase(logoutAsync.fulfilled, (state) => {
+        state.user = null
+        state.token = null
+        state.isAuthenticated = false
+        state.requiresTwoFactor = false
+      })
   },
 })
 
 export const { logout, clearError, clearTwoFactor } = authSlice.actions
+export { logoutAsync }
 export default authSlice.reducer

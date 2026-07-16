@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { HiOutlineMenu, HiOutlineLogout, HiOutlineSun, HiOutlineMoon, HiOutlineLockClosed } from 'react-icons/hi'
-import { logout } from '../../store/slices/authSlice'
+import { logoutAsync } from '../../store/slices/authSlice'
 import ConfirmDialog from '../UI/ConfirmDialog'
 import Modal from '../UI/Modal'
 import api from '../../services/api'
@@ -61,7 +61,7 @@ const Header = ({ onMenuClick }) => {
   }
   const currentPage = getPageInfo()
 
-  const handleLogout = () => { dispatch(logout()); navigate('/login') }
+  const handleLogout = () => { dispatch(logoutAsync()); navigate('/login') }
 
   const handleChangePassword = async (e) => {
     e.preventDefault()

@@ -11,7 +11,7 @@ const seedAdmin = async () => {
       password: 'Admin@1234',
       role: 'admin'
     });
-    console.log('Admin seeded: admin@warmfarm.com / Admin@1234');
+    console.log('Admin user seeded successfully');
   } catch (err) {
     console.log('Admin seed skipped:', err.message);
   }

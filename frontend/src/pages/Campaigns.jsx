@@ -146,7 +146,7 @@ const Campaigns = () => {
       toast.success('Device updated')
       setShowDeviceModal(false)
     } catch (err) {
-      toast.error(err)
+      toast.error(typeof err === 'string' ? err : err?.message || 'Operation failed')
     }
   }
 
@@ -156,7 +156,7 @@ const Campaigns = () => {
       toast.success('Country updated')
       setShowCountryModal(false)
     } catch (err) {
-      toast.error(err)
+      toast.error(typeof err === 'string' ? err : err?.message || 'Operation failed')
     }
   }
 
@@ -234,7 +234,7 @@ const Campaigns = () => {
       setSelectedCampaign(null)
       loadCampaigns()
     } catch (err) {
-      toast.error(err)
+      toast.error(typeof err === 'string' ? err : err?.message || 'Operation failed')
     }
   }
 

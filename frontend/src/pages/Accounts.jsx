@@ -52,7 +52,7 @@ const Accounts = () => {
       setSelectedAccount(null)
       loadAccounts()
     } catch (err) {
-      toast.error(err)
+      toast.error(typeof err === 'string' ? err : err?.message || 'Operation failed')
     } finally {
       setSubmitting(false)
     }
@@ -81,7 +81,7 @@ const Accounts = () => {
       setSelectedAccount(null)
       loadAccounts()
     } catch (err) {
-      toast.error(err)
+      toast.error(typeof err === 'string' ? err : err?.message || 'Operation failed')
     }
   }
 

@@ -10,7 +10,8 @@ exports.getLogs = asyncHandler(async (req, res) => {
     .paginate();
 
   const logs = await features.query.populate('user', 'name email');
-  const total = await ActivityLog.countDocuments();
+  const countFilter = features.searchFilter || {};
+  const total = await ActivityLog.countDocuments(countFilter);
 
   res.json({
     success: true,
