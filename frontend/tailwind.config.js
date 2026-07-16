@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "C:/Users/window10/Downloads/Warming-Farming/frontend/index.html",
-    "C:/Users/window10/Downloads/Warming-Farming/frontend/src/**/*.{js,ts,jsx,tsx}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   darkMode: 'class',
   theme: {
