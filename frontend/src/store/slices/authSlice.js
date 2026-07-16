@@ -107,5 +107,4 @@ const authSlice = createSlice({
 })
 
 export const { logout, clearError, clearTwoFactor } = authSlice.actions
-export { logoutAsync }
 export default authSlice.reducer
