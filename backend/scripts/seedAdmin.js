@@ -20,13 +20,13 @@ const seedAdmin = async () => {
     const admin = await User.create({
       name: 'Admin',
       email: 'admin@warmfarm.com',
-      password: 'admin123',
+      password: 'Admin@1234',
       role: 'admin'
     });
 
     console.log('Admin user created successfully!');
     console.log('Email: admin@warmfarm.com');
-    console.log('Password: admin123');
+    console.log('Password: Admin@1234');
     console.log('Role:', admin.role);
 
     process.exit(0);
