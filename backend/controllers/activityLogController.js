@@ -1,0 +1,20 @@
+const ActivityLog = require('../models/ActivityLog');
+const APIFeatures = require('../utils/apiFeatures');
+const { asyncHandler } = require('../utils/helpers');
+
+exports.getLogs = asyncHandler(async (req, res) => {
+  const features = new APIFeatures(ActivityLog.find(), req.query)
+    .search(['action', 'details'])
+    .filter()
+    .sort()
+    .paginate();
+
+  const logs = await features.query.populate('user', 'name email');
+  const total = await ActivityLog.countDocuments();
+
+  res.json({
+    success: true,
+    data: logs,
+    pagination: { ...features.pagination, total, pages: Math.ceil(total / (features.pagination?.limit || 10)) }
+  });
+});

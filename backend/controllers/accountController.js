@@ -1,0 +1,98 @@
+const Account = require('../models/Account');
+const Campaign = require('../models/Campaign');
+const APIFeatures = require('../utils/apiFeatures');
+const { asyncHandler } = require('../utils/helpers');
+const { logActivity } = require('../middlewares/activityLogger');
+
+exports.getAccounts = asyncHandler(async (req, res) => {
+  const baseQuery = Account.find();
+  const features = new APIFeatures(baseQuery, req.query)
+    .search(['name', 'inviteEmail'])
+    .filter()
+    .sort()
+    .paginate();
+
+  const accounts = await features.query.populate('createdBy', 'name email');
+  const total = await Account.countDocuments(features.filterObj || {});
+
+  res.json({
+    success: true,
+    data: accounts,
+    pagination: { ...features.pagination, total, pages: Math.ceil(total / (features.pagination?.limit || 10)) }
+  });
+});
+
+exports.getAccount = asyncHandler(async (req, res) => {
+  const account = await Account.findById(req.params.id).populate('createdBy', 'name email');
+  if (!account) return res.status(404).json({ success: false, message: 'Account not found' });
+  res.json({ success: true, data: account });
+});
+
+exports.createAccount = asyncHandler(async (req, res) => {
+  req.body.createdBy = req.user._id;
+  const account = await Account.create(req.body);
+
+  // Auto-create a campaign for the new account
+  const budget = Math.floor(Math.random() * 21) + 20; // random 20-40
+  await Campaign.create({
+    campaignName: `${account.name} - Campaign`,
+    account: account._id,
+    dailyBudget: budget,
+    status: 'active',
+    country: 'India',
+    device: 'all',
+    createdBy: req.user._id,
+  });
+
+  await logActivity(req.user._id, 'account_created', 'account', account._id, `Account ${account.name} created`, req.ip);
+  res.status(201).json({ success: true, data: account });
+});
+
+exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
+  const { count, ...accountData } = req.body;
+  const num = Math.min(Math.max(parseInt(count) || 1, 1), 100);
+  const created = [];
+
+  for (let i = 1; i <= num; i++) {
+    const name = num === 1 ? accountData.name : `${accountData.name} ${i}`;
+    const account = await Account.create({
+      ...accountData,
+      name,
+      createdBy: req.user._id,
+    });
+
+    const budget = Math.floor(Math.random() * 21) + 20;
+    await Campaign.create({
+      campaignName: `${name} - Campaign`,
+      account: account._id,
+      dailyBudget: budget,
+      status: 'active',
+      country: 'India',
+      device: 'all',
+      createdBy: req.user._id,
+    });
+
+    created.push(account);
+  }
+
+  await logActivity(req.user._id, 'account_bulk_created', 'account', null, `${num} accounts created`, req.ip);
+  res.status(201).json({ success: true, data: created, count: num });
+});
+
+exports.updateAccount = asyncHandler(async (req, res) => {
+  const account = await Account.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true, runValidators: true }
+  );
+  if (!account) return res.status(404).json({ success: false, message: 'Account not found' });
+  await logActivity(req.user._id, 'account_updated', 'account', account._id, `Account ${account.name} updated`, req.ip);
+  res.json({ success: true, data: account });
+});
+
+exports.deleteAccount = asyncHandler(async (req, res) => {
+  const account = await Account.findByIdAndDelete(req.params.id);
+  if (!account) return res.status(404).json({ success: false, message: 'Account not found' });
+  await logActivity(req.user._id, 'account_deleted', 'account', account._id, `Account ${account.name} deleted`, req.ip);
+  res.json({ success: true, message: 'Account deleted successfully' });
+});
