@@ -143,62 +143,73 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
   const mccIds = await googleAds.getMccIds();
   let synced = 0;
   let campaignsSynced = 0;
+  const failedMccs = [];
 
   for (const mccId of mccIds) {
-  const clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
-
-  for (const acct of clientAccounts) {
-    let localAccount = await Account.findOne({ googleAdsCustomerId: acct.customerId });
-    if (!localAccount) {
-      localAccount = await Account.create({
-        name: acct.name || `Account ${acct.customerId}`,
-        googleAdsCustomerId: acct.customerId,
-        inviteEmail: 'synced@googleads.com',
-        status: acct.status === 'ENABLED' ? 'active' : 'paused',
-        createdBy: req.user._id,
-      });
-    } else {
-      localAccount.name = acct.name || localAccount.name;
-      localAccount.status = acct.status === 'ENABLED' ? 'active' : 'paused';
-      await localAccount.save();
-    }
-    synced++;
-
+    let clientAccounts;
     try {
-      const campaigns = await googleAds.fetchCampaigns(acct.customerId, refreshToken, mccId);
-      for (const camp of campaigns) {
-        const existing = await Campaign.findOne({ googleAdsCampaignId: camp.campaignId, account: localAccount._id });
-        if (!existing) {
-          await Campaign.create({
-            campaignName: camp.campaignName,
-            googleAdsCampaignId: camp.campaignId,
-            account: localAccount._id,
-            status: camp.status === 'ENABLED' ? 'active' : 'paused',
-            clicks: camp.clicks,
-            impressions: camp.impressions,
-            spend: camp.spend,
-            conversions: camp.conversions,
-            createdBy: req.user._id,
-          });
-        } else {
-          existing.campaignName = camp.campaignName;
-          existing.status = camp.status === 'ENABLED' ? 'active' : 'paused';
-          existing.clicks = camp.clicks;
-          existing.impressions = camp.impressions;
-          existing.spend = camp.spend;
-          existing.conversions = camp.conversions;
-          await existing.save();
-        }
-        campaignsSynced++;
-      }
+      clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
     } catch (err) {
-      console.error(`Failed to sync campaigns for ${acct.customerId}:`, err.message);
+      console.error(`MCC ${mccId} failed:`, err.message);
+      failedMccs.push(mccId);
+      continue;
+    }
+
+    for (const acct of clientAccounts) {
+      let localAccount = await Account.findOne({ googleAdsCustomerId: acct.customerId });
+      if (!localAccount) {
+        localAccount = await Account.create({
+          name: acct.name || `Account ${acct.customerId}`,
+          googleAdsCustomerId: acct.customerId,
+          inviteEmail: 'synced@googleads.com',
+          status: acct.status === 'ENABLED' ? 'active' : 'paused',
+          createdBy: req.user._id,
+        });
+      } else {
+        localAccount.name = acct.name || localAccount.name;
+        localAccount.status = acct.status === 'ENABLED' ? 'active' : 'paused';
+        await localAccount.save();
+      }
+      synced++;
+
+      try {
+        const campaigns = await googleAds.fetchCampaigns(acct.customerId, refreshToken, mccId);
+        for (const camp of campaigns) {
+          const existing = await Campaign.findOne({ googleAdsCampaignId: camp.campaignId, account: localAccount._id });
+          if (!existing) {
+            await Campaign.create({
+              campaignName: camp.campaignName,
+              googleAdsCampaignId: camp.campaignId,
+              account: localAccount._id,
+              status: camp.status === 'ENABLED' ? 'active' : 'paused',
+              clicks: camp.clicks,
+              impressions: camp.impressions,
+              spend: camp.spend,
+              conversions: camp.conversions,
+              createdBy: req.user._id,
+            });
+          } else {
+            existing.campaignName = camp.campaignName;
+            existing.status = camp.status === 'ENABLED' ? 'active' : 'paused';
+            existing.clicks = camp.clicks;
+            existing.impressions = camp.impressions;
+            existing.spend = camp.spend;
+            existing.conversions = camp.conversions;
+            await existing.save();
+          }
+          campaignsSynced++;
+        }
+      } catch (err) {
+        console.error(`Failed to sync campaigns for ${acct.customerId}:`, err.message);
+      }
     }
   }
-  } // end mccIds loop
 
-  await logActivity(req.user._id, 'google_ads_synced', 'settings', null, `Synced ${synced} accounts, ${campaignsSynced} campaigns from ${mccIds.length} MCC(s)`, req.ip);
-  res.json({ success: true, message: `Synced ${synced} accounts and ${campaignsSynced} campaigns from ${mccIds.length} MCC(s)` });
+  let msg = `Synced ${synced} accounts and ${campaignsSynced} campaigns from ${mccIds.length - failedMccs.length}/${mccIds.length} MCC(s)`;
+  if (failedMccs.length > 0) msg += `. Failed MCCs (no permission): ${failedMccs.join(', ')}`;
+
+  await logActivity(req.user._id, 'google_ads_synced', 'settings', null, msg, req.ip);
+  res.json({ success: true, message: msg });
 });
 
 exports.seedDefaults = asyncHandler(async (req, res) => {
