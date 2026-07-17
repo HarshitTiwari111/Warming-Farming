@@ -1,7 +1,6 @@
 const Setting = require('../models/Setting');
 
 const WORKER_BASE = 'https://secure.dataram.workers.dev/api/v24';
-const DEFAULT_MCC_ID = '8331500921';
 
 async function getRefreshToken() {
   const setting = await Setting.findOne({ key: 'google_ads_refresh_token' });
@@ -11,11 +10,12 @@ async function getRefreshToken() {
 async function getMccIds() {
   const setting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
   if (Array.isArray(setting?.value) && setting.value.length > 0) return setting.value;
-  return [DEFAULT_MCC_ID];
+  return [];
 }
 
 async function getMccId() {
   const ids = await getMccIds();
+  if (!ids.length) return null;
   return ids[0];
 }
 
@@ -68,7 +68,7 @@ async function findMccId(refreshToken) {
       if (rows[0]?.customer?.manager === true) return id;
     } catch { /* skip */ }
   }
-  return DEFAULT_MCC_ID;
+  return null;
 }
 
 async function fetchClientAccounts(mccId, refreshToken) {

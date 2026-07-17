@@ -118,6 +118,7 @@ exports.getGoogleAdsAccounts = asyncHandler(async (req, res) => {
   if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
 
   const mccId = await googleAds.getMccId();
+  if (!mccId) return res.status(400).json({ success: false, message: 'No MCC ID configured. Add MCC ID in Settings first.' });
   const accounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
   res.json({ success: true, data: accounts });
 });
@@ -128,6 +129,7 @@ exports.getGoogleAdsCampaigns = asyncHandler(async (req, res) => {
   if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
 
   const mccId = await googleAds.getMccId();
+  if (!mccId) return res.status(400).json({ success: false, message: 'No MCC ID configured. Add MCC ID in Settings first.' });
   const { customerId } = req.params;
   const campaigns = await googleAds.fetchCampaigns(customerId, refreshToken, mccId);
   res.json({ success: true, data: campaigns });
@@ -141,6 +143,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
   if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
 
   const mccIds = await googleAds.getMccIds();
+  if (!mccIds.length) return res.status(400).json({ success: false, message: 'No MCC ID configured. Add MCC ID in Settings first.' });
   let synced = 0;
   let campaignsSynced = 0;
   const failedMccs = [];
