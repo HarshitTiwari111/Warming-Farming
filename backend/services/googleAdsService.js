@@ -101,9 +101,8 @@ async function fetchCampaigns(customerId, refreshToken, loginCustomerId) {
 }
 
 async function createClientAccount(refreshToken, { name, currencyCode, timeZone }) {
-  const accessibleIds = await listAccessibleCustomers(refreshToken);
-  if (!accessibleIds.length) throw new Error('No MCC found');
-  const mccId = accessibleIds[0];
+  const mccId = await findMccId(refreshToken);
+  if (!mccId) throw new Error('No active MCC found');
 
   const url = `${WORKER_BASE}/customers/${mccId}:createCustomerClient`;
   const response = await fetch(url, {
