@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, onToggle, collapsed, onCollapse }) => {
     <>
       {isOpen && <div className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" onClick={onToggle} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-30 bg-[#0f172a] transform transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} ${collapsed ? 'lg:w-[70px] w-64' : 'w-64'}`}>
-        <div className={`flex items-center h-16 px-4 border-b border-slate-700/50 ${collapsed ? 'lg:justify-center' : 'justify-between'}`}>
+        <div className="flex items-center justify-between h-16 px-4 border-b border-slate-700/50">
           <div className={`flex items-center gap-2 ${collapsed ? 'lg:hidden' : ''}`}>
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
               <HiOutlineFire className="w-5 h-5 text-white" />
@@ -36,20 +36,19 @@ const Sidebar = ({ isOpen, onToggle, collapsed, onCollapse }) => {
               </div>
             </div>
           )}
+          {/* Desktop collapse toggle - right side of header */}
+          <button
+            onClick={onCollapse}
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <HiOutlineMenu className="w-5 h-5" />
+          </button>
           {/* Mobile close button */}
           <button onClick={onToggle} className="lg:hidden text-slate-400 hover:text-white">
             <HiOutlineX className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Desktop collapse toggle */}
-        <button
-          onClick={onCollapse}
-          className="hidden lg:flex items-center justify-center w-full py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-b border-slate-700/50"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <HiOutlineMenu className="w-5 h-5" />
-        </button>
 
         <nav className="mt-2 px-2 flex-1">
           {menuItems.map((item) => (
