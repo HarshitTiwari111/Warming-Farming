@@ -104,7 +104,6 @@ const Accounts = () => {
   const columns = [
     { key: 'name', label: 'Name', sortable: true, filterable: true, render: (row) => <span className="font-medium">{row.name}</span> },
     { key: 'googleAdsCustomerId', label: 'Google Ads ID', sortable: true, render: (row) => row.googleAdsCustomerId ? <span className="font-mono text-xs text-blue-600 dark:text-blue-400">{row.googleAdsCustomerId}</span> : <span className="text-gray-400 text-xs">-</span> },
-    { key: 'inviteEmail', label: 'Invite Email', sortable: true, filterable: true },
     { key: 'currency', label: 'Currency', sortable: true, filterable: true, filterType: 'select', filterOptions: [{value:'USD',label:'USD'},{value:'INR',label:'INR'},{value:'EUR',label:'EUR'},{value:'GBP',label:'GBP'},{value:'AED',label:'AED'},{value:'AUD',label:'AUD'},{value:'SGD',label:'SGD'}] },
     { key: 'billingBudget', label: 'Billing Budget', sortable: true, render: (row) => `$${row.billingBudget ?? 0}` },
     { key: 'timezone', label: 'Timezone', sortable: true },
