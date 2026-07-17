@@ -20,7 +20,7 @@ const GoogleCallback = () => {
 
     setDebugInfo({ fullUrl, params: allParams, paramCount: Object.keys(allParams).length })
 
-    const refreshToken = allParams.refresh_token || allParams.refreshToken || allParams.token
+    const refreshToken = allParams.google_refresh_token || allParams.refresh_token || allParams.refreshToken || allParams.token
     const accessToken = allParams.access_token || allParams.accessToken
     const code = allParams.code
 
