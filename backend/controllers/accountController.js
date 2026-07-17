@@ -42,9 +42,21 @@ exports.createAccount = asyncHandler(async (req, res) => {
   req.body.owner = req.user._id;
   const account = await Account.create(req.body);
 
+  let googleAdsError = null;
   const fullUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
+  console.log('Google Ads check:', { connected: fullUser?.googleAdsConnected, hasToken: !!fullUser?.googleAdsRefreshToken, mccIds: fullUser?.googleAdsMccIds });
+
   if (fullUser?.googleAdsConnected && fullUser.googleAdsRefreshToken) {
-    const mccId = fullUser.googleAdsMccIds?.[0] || (await googleAds.getMccId());
+    let mccId = fullUser.googleAdsMccIds?.[0];
+    if (!mccId) {
+      try {
+        mccId = await googleAds.findMccId(fullUser.googleAdsRefreshToken);
+        console.log('Found MCC via findMccId:', mccId);
+      } catch (e) {
+        console.error('findMccId failed:', e.message);
+      }
+    }
+    console.log('Using MCC ID:', mccId);
     if (mccId) {
       try {
         const result = await googleAds.createClientAccount(mccId, fullUser.googleAdsRefreshToken, {
@@ -53,15 +65,21 @@ exports.createAccount = asyncHandler(async (req, res) => {
           timeZone: account.timezone || 'Asia/Kolkata',
           emailAddress: account.inviteEmail || undefined,
         });
+        console.log('createClientAccount result:', JSON.stringify(result));
         if (result.customerId) {
           account.googleAdsCustomerId = result.customerId;
           account.sourceMccId = mccId;
           await account.save();
         }
       } catch (err) {
+        googleAdsError = err.message;
         console.error('Google Ads account creation failed:', err.message);
       }
+    } else {
+      googleAdsError = 'No MCC ID found';
     }
+  } else {
+    googleAdsError = 'Google Ads not connected or no refresh token';
   }
 
   const budget = Math.floor(Math.random() * 21) + 20;
@@ -77,7 +95,9 @@ exports.createAccount = asyncHandler(async (req, res) => {
   });
 
   await logActivity(req.user._id, 'account_created', 'account', account._id, `Account ${account.name} created`, req.ip);
-  res.status(201).json({ success: true, data: account });
+  const response = { success: true, data: account };
+  if (googleAdsError) response.googleAdsError = googleAdsError;
+  res.status(201).json(response);
 });
 
 exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
