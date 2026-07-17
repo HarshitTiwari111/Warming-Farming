@@ -124,8 +124,8 @@ const Users = () => {
 
   return (
     <div>
-      <div className="flex justify-end mb-6">
-        <button onClick={() => { setSelectedUser(null); setForm(initialForm); setShowModal(true) }} className="btn-primary flex items-center gap-2">
+      <div className="flex justify-end mb-4 sm:mb-6">
+        <button onClick={() => { setSelectedUser(null); setForm(initialForm); setShowModal(true) }} className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center">
           <HiOutlinePlus className="w-4 h-4" /> Add User
         </button>
       </div>

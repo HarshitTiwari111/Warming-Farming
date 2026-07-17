@@ -95,7 +95,7 @@ const Settings = () => {
   return (
     <div className="space-y-6">
       {/* Per-user Google Ads Connection */}
-      <div className="card max-w-3xl">
+      <div className="card max-w-3xl mx-auto sm:mx-0">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Google Ads Connection</h2>
 
         <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-5 mb-6 border border-gray-100 dark:border-gray-700">
@@ -152,7 +152,7 @@ const Settings = () => {
               ))}
             </div>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <input
               type="text"
               value={newMccId}

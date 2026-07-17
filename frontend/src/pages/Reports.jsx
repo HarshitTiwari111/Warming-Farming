@@ -87,25 +87,25 @@ const Reports = () => {
     <div>
       {/* Filter + PDF in one card, one row */}
       <div className="card mb-4">
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="relative flex-1 basis-40 min-w-0">
             <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input type="text" value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               placeholder="Search campaign..." className="input-field pl-9" />
           </div>
-          <div className="relative flex-1">
+          <div className="relative flex-1 basis-40 min-w-0">
             <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input type="text" value={filters.country} onChange={(e) => setFilters({ ...filters, country: e.target.value })}
               placeholder="Search country..." className="input-field pl-9" />
           </div>
-          <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className="input-field w-40">
+          <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className="input-field w-full sm:w-40">
             <option value="">Status: All</option>
             <option value="active">Active</option>
             <option value="paused">Paused</option>
             <option value="ended">Ended</option>
             <option value="draft">Draft</option>
           </select>
-          <button onClick={exportPDF} disabled={exporting} className="btn-primary flex items-center gap-2 shrink-0">
+          <button onClick={exportPDF} disabled={exporting} className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center shrink-0">
             <HiOutlineDocumentDownload className="w-4 h-4" /> {exporting ? 'Downloading...' : 'Download PDF'}
           </button>
         </div>
@@ -156,9 +156,9 @@ const Reports = () => {
             </table>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, sortedCampaigns.length)} of {sortedCampaigns.length}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, sortedCampaigns.length)} of {sortedCampaigns.length}
               </span>
               <div className="flex items-center gap-2">
                 <button

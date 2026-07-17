@@ -15,7 +15,7 @@ const StatsCard = ({ title, value, icon: Icon, color = 'primary', trend }) => {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-1 break-all">{value}</p>
           {trend && (
             <p className={`text-xs mt-1 ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
               {trend > 0 ? '+' : ''}{trend}% from last period

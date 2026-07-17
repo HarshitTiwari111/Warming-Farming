@@ -119,29 +119,29 @@ const Security = () => {
         </div>
 
         {twoFAEnabled ? (
-          <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800/30">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800/30">
+            <div className="min-w-0">
               <p className="font-semibold text-green-700 dark:text-green-400">2FA is enabled</p>
               <p className="text-sm text-green-600 dark:text-green-500">Your account is protected with two-factor authentication.</p>
             </div>
-            <button onClick={() => setShowDisable2FA(true)} className="px-4 py-2 text-sm font-medium text-red-600 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            <button onClick={() => setShowDisable2FA(true)} className="px-4 py-2 text-sm font-medium text-red-600 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full sm:w-auto text-center">
               Disable 2FA
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800/30">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800/30">
+            <div className="min-w-0">
               <p className="font-semibold text-yellow-700 dark:text-yellow-400">2FA is not enabled</p>
               <p className="text-sm text-yellow-600 dark:text-yellow-500">Add an extra layer of security to your account.</p>
             </div>
-            <button onClick={handleSetup2FA} className="btn-primary text-sm">Enable 2FA</button>
+            <button onClick={handleSetup2FA} className="btn-primary text-sm w-full sm:w-auto text-center">Enable 2FA</button>
           </div>
         )}
       </div>
 
       {/* Active Sessions */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-3">
             <HiOutlineDesktopComputer className="w-6 h-6 text-blue-500" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Sessions</h2>
@@ -160,14 +160,14 @@ const Security = () => {
         ) : (
           <div className="space-y-3">
             {sessions.map((session, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{session.device || 'Unknown Device'}</p>
+              <div key={i} className="flex items-center justify-between gap-2 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{session.device || 'Unknown Device'}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Active since {formatDate(session.createdAt)} &middot; Expires {formatDate(session.expiresAt)}
                   </p>
                 </div>
-                <button onClick={() => handleRevokeSession(i)} className="text-gray-400 hover:text-red-600 transition-colors" title="Revoke">
+                <button onClick={() => handleRevokeSession(i)} className="text-gray-400 hover:text-red-600 transition-colors shrink-0" title="Revoke">
                   <HiOutlineTrash className="w-4 h-4" />
                 </button>
               </div>

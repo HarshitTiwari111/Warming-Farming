@@ -73,7 +73,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
   return (
     <div className="card">
       {(hasFilters || actionButtons) && (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           {hasFilters && columns.filter(col => col.filterable).map((col) => (
             col.filterType === 'select' ? (
               <select
@@ -88,7 +88,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
                 ))}
               </select>
             ) : (
-              <div key={`filter-${col.key}`} className="relative min-w-0 flex-1 max-w-[180px]">
+              <div key={`filter-${col.key}`} className="relative min-w-0 flex-1 basis-32 max-w-[180px]">
                 <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <input
                   type="text"
@@ -108,7 +108,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
               Clear
             </button>
           )}
-          {actionButtons && <div className="ml-auto flex items-center gap-2 shrink-0">{actionButtons}</div>}
+          {actionButtons && <div className="sm:ml-auto flex items-center gap-2 shrink-0">{actionButtons}</div>}
         </div>
       )}
       <div className="overflow-x-auto">
