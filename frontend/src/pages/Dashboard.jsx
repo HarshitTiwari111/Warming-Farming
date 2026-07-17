@@ -17,28 +17,39 @@ const Dashboard = () => {
 
   return (
     <div>
-      {isAdmin && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <StatsCard title="Connected Users" value={`${stats?.connectedUsers || 0} / ${stats?.totalUsers || 0}`} icon={HiOutlineLink} color="green" />
-          <StatsCard title="Total Users" value={stats?.totalUsers || 0} icon={HiOutlineUsers} color="blue" />
-          <StatsCard title="Total MCC IDs" value={stats?.totalMccIds || 0} icon={HiOutlineCollection} color="purple" />
-        </div>
+      {isAdmin ? (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <StatsCard title="Connected Users" value={`${stats?.connectedUsers || 0} / ${stats?.totalUsers || 0}`} icon={HiOutlineLink} color="green" />
+            <StatsCard title="Total Users" value={stats?.totalUsers || 0} icon={HiOutlineUsers} color="blue" />
+            <StatsCard title="Total MCC IDs" value={stats?.totalMccIds || 0} icon={HiOutlineCollection} color="purple" />
+            <StatsCard title="Total Accounts" value={stats?.totalAccounts || 0} icon={HiOutlineUserGroup} color="primary" />
+            <StatsCard title="Active Accounts" value={stats?.activeAccounts || 0} icon={HiOutlineCheckCircle} color="green" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <StatsCard title="Paused Accounts" value={stats?.pausedAccounts || 0} icon={HiOutlinePause} color="orange" />
+            <StatsCard title="Daily Budget" value={`₹${stats?.totalDailyBudget || 0}`} icon={HiOutlineCurrencyDollar} color="purple" />
+            <StatsCard title="Total Campaigns" value={stats?.totalCampaigns || 0} icon={HiOutlineSpeakerphone} color="blue" />
+            <StatsCard title="Active Campaigns" value={stats?.activeCampaigns || 0} icon={HiOutlinePlay} color="green" />
+            <StatsCard title="Paused Campaigns" value={stats?.pausedCampaigns || 0} icon={HiOutlinePause} color="orange" />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatsCard title="Total Accounts" value={stats?.totalAccounts || 0} icon={HiOutlineUserGroup} color="primary" />
+            <StatsCard title="Active Accounts" value={stats?.activeAccounts || 0} icon={HiOutlineCheckCircle} color="green" />
+            <StatsCard title="Paused Accounts" value={stats?.pausedAccounts || 0} icon={HiOutlinePause} color="orange" />
+            <StatsCard title="Pending" value={stats?.pendingAccounts || 0} icon={HiOutlineClock} color="yellow" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatsCard title="Total Campaigns" value={stats?.totalCampaigns || 0} icon={HiOutlineSpeakerphone} color="blue" />
+            <StatsCard title="Active Campaigns" value={stats?.activeCampaigns || 0} icon={HiOutlinePlay} color="green" />
+            <StatsCard title="Paused Campaigns" value={stats?.pausedCampaigns || 0} icon={HiOutlinePause} color="orange" />
+            <StatsCard title="Daily Budget" value={`₹${stats?.totalDailyBudget || 0}`} icon={HiOutlineCurrencyDollar} color="purple" />
+          </div>
+        </>
       )}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4 mb-6`}>
-        <StatsCard title="Total Accounts" value={stats?.totalAccounts || 0} icon={HiOutlineUserGroup} color="primary" />
-        <StatsCard title="Active Accounts" value={stats?.activeAccounts || 0} icon={HiOutlineCheckCircle} color="green" />
-        <StatsCard title="Paused Accounts" value={stats?.pausedAccounts || 0} icon={HiOutlinePause} color="orange" />
-        {!isAdmin && <StatsCard title="Pending" value={stats?.pendingAccounts || 0} icon={HiOutlineClock} color="yellow" />}
-        <StatsCard title="Daily Budget" value={`₹${stats?.totalDailyBudget || 0}`} icon={HiOutlineCurrencyDollar} color="purple" />
-      </div>
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4 mb-6`}>
-        <StatsCard title="Total Campaigns" value={stats?.totalCampaigns || 0} icon={HiOutlineSpeakerphone} color="blue" />
-        <StatsCard title="Active Campaigns" value={stats?.activeCampaigns || 0} icon={HiOutlinePlay} color="green" />
-        <StatsCard title="Paused Campaigns" value={stats?.pausedCampaigns || 0} icon={HiOutlinePause} color="orange" />
-        {!isAdmin && <StatsCard title="Daily Budget" value={`₹${stats?.totalDailyBudget || 0}`} icon={HiOutlineCurrencyDollar} color="purple" />}
-        {isAdmin && <StatsCard title="Total Spend" value={`₹${stats?.totalSpend || 0}`} icon={HiOutlineCurrencyDollar} color="red" />}
-        {isAdmin && <StatsCard title="Draft Campaigns" value={stats?.draftCampaigns || 0} icon={HiOutlineClock} color="yellow" />}
-      </div>
 
       {isAdmin && userBreakdown?.length > 0 && (
         <div className="card mb-6">
