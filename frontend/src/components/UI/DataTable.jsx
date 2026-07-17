@@ -67,7 +67,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
   const hasFilters = columns.some(col => col.filterable)
 
   return (
-    <div className="card overflow-x-auto">
+    <div className="card">
       {(hasFilters || actionButtons) && (
         <div className="flex items-center gap-2 mb-4">
           {hasFilters && columns.filter(col => col.filterable).map((col) => (
@@ -107,6 +107,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
           {actionButtons && <div className="ml-auto flex items-center gap-2 shrink-0">{actionButtons}</div>}
         </div>
       )}
+      <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-200 dark:border-gray-700">
@@ -148,6 +149,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
           )}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
