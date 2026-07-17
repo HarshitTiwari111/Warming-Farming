@@ -45,6 +45,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
   await Campaign.create({
     campaignName: `${account.name} - Campaign`,
     account: account._id,
+    owner: req.user._id,
     dailyBudget: budget,
     status: 'active',
     country: 'India',
@@ -74,6 +75,7 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
     await Campaign.create({
       campaignName: `${name} - Campaign`,
       account: account._id,
+      owner: req.user._id,
       dailyBudget: budget,
       status: 'active',
       country: 'India',
