@@ -7,6 +7,7 @@ const GOOGLE_AUTH_URL = 'https://secure.dataram.workers.dev/auth/login'
 
 const Settings = () => {
   const [connected, setConnected] = useState(false)
+  const [tokenInfo, setTokenInfo] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const checkConnection = async () => {
@@ -14,6 +15,7 @@ const Settings = () => {
     try {
       const { data } = await api.get('/settings/google-ads-status')
       setConnected(data.data?.connected || false)
+      setTokenInfo(data.data)
     } catch {
       setConnected(false)
     }
@@ -71,6 +73,24 @@ const Settings = () => {
               <p className="font-semibold text-yellow-700 dark:text-yellow-400">Not Connected</p>
               <p className="text-sm text-yellow-600 dark:text-yellow-500">Connect your Google Ads account to get started.</p>
             </div>
+          </div>
+        )}
+
+        {connected && tokenInfo && (
+          <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">Token Details</h3>
+            {tokenInfo.refreshToken && (
+              <div className="mb-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Refresh Token: </span>
+                <code className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300">{tokenInfo.refreshToken}</code>
+              </div>
+            )}
+            {tokenInfo.rawParams && Object.keys(tokenInfo.rawParams).length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">OAuth Params Received:</span>
+                <pre className="text-xs bg-gray-200 dark:bg-gray-600 p-2 rounded mt-1 overflow-x-auto text-gray-700 dark:text-gray-300">{JSON.stringify(tokenInfo.rawParams, null, 2)}</pre>
+              </div>
+            )}
           </div>
         )}
 

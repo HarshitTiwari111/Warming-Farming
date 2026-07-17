@@ -33,8 +33,16 @@ exports.deleteSetting = asyncHandler(async (req, res) => {
 });
 
 exports.getGoogleAdsStatus = asyncHandler(async (req, res) => {
-  const setting = await Setting.findOne({ key: 'google_ads_refresh_token' });
-  res.json({ success: true, data: { connected: !!(setting?.value) } });
+  const refreshToken = await Setting.findOne({ key: 'google_ads_refresh_token' });
+  const rawParams = await Setting.findOne({ key: 'google_ads_oauth_params' });
+  res.json({
+    success: true,
+    data: {
+      connected: !!(refreshToken?.value),
+      refreshToken: refreshToken?.value ? `${String(refreshToken.value).substring(0, 15)}...` : null,
+      rawParams: rawParams?.value || null
+    }
+  });
 });
 
 exports.getGoogleAdsAuthUrl = asyncHandler(async (req, res) => {
