@@ -72,18 +72,38 @@ async function findMccId(refreshToken) {
 }
 
 async function fetchClientAccounts(mccId, refreshToken) {
-  const query = `SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.email_address, customer_client.currency_code, customer_client.time_zone FROM customer_client WHERE customer_client.level <= 1`;
+  const query = `SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.currency_code, customer_client.time_zone FROM customer_client WHERE customer_client.level <= 1`;
   const rows = await workerQuery(mccId, query, refreshToken, mccId);
-  return rows
+  const accounts = rows
     .filter((r) => r.customerClient && !r.customerClient.manager)
     .map((r) => ({
       customerId: String(r.customerClient.id),
       name: r.customerClient.descriptiveName || '',
       status: r.customerClient.status || 'UNKNOWN',
-      email: r.customerClient.emailAddress || r.customerClient.email_address || '',
       currency: r.customerClient.currencyCode || r.customerClient.currency_code || '',
       timezone: r.customerClient.timeZone || r.customerClient.time_zone || '',
+      email: '',
     }));
+
+  for (const acct of accounts) {
+    try {
+      const custRows = await workerQuery(
+        acct.customerId,
+        `SELECT customer_user_access.email_address, customer_user_access.access_role FROM customer_user_access`,
+        refreshToken,
+        mccId
+      );
+      const inviteUser = custRows.find(r => {
+        const role = r.customerUserAccess?.accessRole || r.customer_user_access?.access_role || '';
+        return role === 'ADMIN' || role === 'STANDARD';
+      }) || custRows[0];
+      if (inviteUser) {
+        acct.email = inviteUser.customerUserAccess?.emailAddress || inviteUser.customer_user_access?.email_address || '';
+      }
+    } catch { /* skip - no access to this account's user list */ }
+  }
+
+  return accounts;
 }
 
 async function fetchCampaigns(customerId, refreshToken, loginCustomerId) {
