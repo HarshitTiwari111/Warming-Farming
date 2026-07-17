@@ -64,7 +64,7 @@ exports.syncMyAccounts = asyncHandler(async (req, res) => {
   for (const mccId of user.googleAdsMccIds) {
     let clientAccounts;
     try {
-      clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
+      clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken, user.email);
     } catch (err) {
       console.error(`MCC ${mccId} failed for user ${user.email}:`, err.message);
       failedMccs.push(mccId);

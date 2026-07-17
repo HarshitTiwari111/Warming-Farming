@@ -71,7 +71,7 @@ async function findMccId(refreshToken) {
   return null;
 }
 
-async function fetchClientAccounts(mccId, refreshToken) {
+async function fetchClientAccounts(mccId, refreshToken, ownerEmail) {
   const query = `SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.currency_code, customer_client.time_zone FROM customer_client WHERE customer_client.level <= 1`;
   const rows = await workerQuery(mccId, query, refreshToken, mccId);
   const accounts = rows
@@ -85,6 +85,8 @@ async function fetchClientAccounts(mccId, refreshToken) {
       email: '',
     }));
 
+  const ownerEmailLower = (ownerEmail || '').toLowerCase();
+
   for (const acct of accounts) {
     try {
       const custRows = await workerQuery(
@@ -93,14 +95,19 @@ async function fetchClientAccounts(mccId, refreshToken) {
         refreshToken,
         mccId
       );
-      const inviteUser = custRows.find(r => {
-        const role = r.customerUserAccess?.accessRole || r.customer_user_access?.access_role || '';
-        return role === 'ADMIN' || role === 'STANDARD';
-      }) || custRows[0];
+
+      const allEmails = custRows.map(r => ({
+        email: (r.customerUserAccess?.emailAddress || r.customer_user_access?.email_address || '').toLowerCase(),
+        role: r.customerUserAccess?.accessRole || r.customer_user_access?.access_role || '',
+      })).filter(e => e.email);
+
+      const inviteUser = allEmails.find(e => e.email !== ownerEmailLower) || allEmails[0];
       if (inviteUser) {
-        acct.email = inviteUser.customerUserAccess?.emailAddress || inviteUser.customer_user_access?.email_address || '';
+        acct.email = inviteUser.email;
       }
-    } catch { /* skip - no access to this account's user list */ }
+    } catch (err) {
+      console.error(`Failed to fetch user access for account ${acct.customerId}:`, err.message);
+    }
   }
 
   return accounts;
