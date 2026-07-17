@@ -40,7 +40,7 @@ const App = () => {
         <Route path="publish" element={<Publish />} />
         <Route path="reports" element={<Reports />} />
         <Route path="security" element={<Security />} />
-        <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
+        <Route path="settings" element={<Settings />} />
         <Route path="users" element={<Users />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

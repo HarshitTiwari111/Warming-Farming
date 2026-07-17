@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import { HiOutlineCheckCircle, HiOutlineExclamation, HiOutlineRefresh } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
@@ -6,27 +7,45 @@ import toast from 'react-hot-toast'
 const GOOGLE_AUTH_URL = 'https://secure.dataram.workers.dev/auth/login'
 
 const Settings = () => {
+  const { user } = useSelector((state) => state.auth)
+  const isAdmin = ['admin', 'super_admin'].includes(user?.role)
+
   const [connected, setConnected] = useState(false)
-  const [tokenInfo, setTokenInfo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [mccIds, setMccIds] = useState([])
   const [newMccId, setNewMccId] = useState('')
   const [savingMcc, setSavingMcc] = useState(false)
+  const [lastSync, setLastSync] = useState(null)
+  const [allUsers, setAllUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
 
   const checkConnection = async () => {
     setLoading(true)
     try {
-      const { data } = await api.get('/settings/google-ads-status')
+      const { data } = await api.get('/google-ads/my-google-status')
       setConnected(data.data?.connected || false)
-      setTokenInfo(data.data)
-      if (data.data?.mccIds?.length) setMccIds(data.data.mccIds)
+      setMccIds(data.data?.mccIds || [])
+      setLastSync(data.data?.lastSync)
     } catch {
       setConnected(false)
     }
     setLoading(false)
   }
 
-  useEffect(() => { checkConnection() }, [])
+  const loadAllUsers = async () => {
+    if (!isAdmin) return
+    setLoadingUsers(true)
+    try {
+      const { data } = await api.get('/google-ads/admin/users-google-status')
+      setAllUsers(data.data || [])
+    } catch { /* ignore */ }
+    setLoadingUsers(false)
+  }
+
+  useEffect(() => {
+    checkConnection()
+    loadAllUsers()
+  }, [])
 
   const handleAddMcc = async () => {
     const id = newMccId.trim()
@@ -35,7 +54,7 @@ const Settings = () => {
     const updated = [...mccIds, id]
     setSavingMcc(true)
     try {
-      await api.post('/settings/google-ads-mcc-ids', { mccIds: updated })
+      await api.post('/google-ads/my-mcc-ids', { mccIds: updated })
       setMccIds(updated)
       setNewMccId('')
       toast.success('MCC ID added')
@@ -49,7 +68,7 @@ const Settings = () => {
     const updated = mccIds.filter(m => m !== id)
     setSavingMcc(true)
     try {
-      await api.post('/settings/google-ads-mcc-ids', { mccIds: updated })
+      await api.post('/google-ads/my-mcc-ids', { mccIds: updated })
       setMccIds(updated)
       toast.success('MCC ID removed')
     } catch {
@@ -65,7 +84,7 @@ const Settings = () => {
 
   const handleDisconnect = async () => {
     try {
-      await api.post('/settings/google-ads-disconnect')
+      await api.post('/google-ads/my-google-disconnect')
       setConnected(false)
       toast.success('Google Ads disconnected')
     } catch {
@@ -74,7 +93,8 @@ const Settings = () => {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Per-user Google Ads Connection */}
       <div className="card max-w-3xl">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Google Ads Connection</h2>
 
@@ -84,6 +104,7 @@ const Settings = () => {
             <li>Click "Connect with Google" below.</li>
             <li>Sign in with the Gmail account that has access to your Google Ads manager account.</li>
             <li>Grant permission — you'll be redirected back automatically.</li>
+            <li>Add your MCC ID(s) and click "Sync from Google Ads" on Accounts page.</li>
           </ol>
         </div>
 
@@ -97,7 +118,10 @@ const Settings = () => {
             <HiOutlineCheckCircle className="w-6 h-6 text-green-500" />
             <div>
               <p className="font-semibold text-green-700 dark:text-green-400">Connected</p>
-              <p className="text-sm text-green-600 dark:text-green-500">Your Google Ads account is linked and active.</p>
+              <p className="text-sm text-green-600 dark:text-green-500">
+                Your Google Ads account is linked.
+                {lastSync && <span className="ml-2 text-xs">Last sync: {new Date(lastSync).toLocaleString()}</span>}
+              </p>
             </div>
           </div>
         ) : (
@@ -107,24 +131,6 @@ const Settings = () => {
               <p className="font-semibold text-yellow-700 dark:text-yellow-400">Not Connected</p>
               <p className="text-sm text-yellow-600 dark:text-yellow-500">Connect your Google Ads account to get started.</p>
             </div>
-          </div>
-        )}
-
-        {connected && tokenInfo && (
-          <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">Token Details</h3>
-            {tokenInfo.refreshToken && (
-              <div className="mb-2">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Refresh Token: </span>
-                <code className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300">{tokenInfo.refreshToken}</code>
-              </div>
-            )}
-            {tokenInfo.rawParams && Object.keys(tokenInfo.rawParams).length > 0 && (
-              <div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">OAuth Params Received:</span>
-                <pre className="text-xs bg-gray-200 dark:bg-gray-600 p-2 rounded mt-1 overflow-x-auto text-gray-700 dark:text-gray-300">{JSON.stringify(tokenInfo.rawParams, null, 2)}</pre>
-              </div>
-            )}
           </div>
         )}
 
@@ -163,7 +169,7 @@ const Settings = () => {
               {savingMcc ? 'Saving...' : 'Add MCC ID'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-2">Add your Google Ads Manager Account IDs (10 digits each). All MCC accounts will be synced.</p>
+          <p className="text-xs text-gray-400 mt-2">Add your Google Ads Manager Account IDs (10 digits each).</p>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -198,6 +204,74 @@ const Settings = () => {
           )}
         </div>
       </div>
+
+      {/* Admin: All Users Google Status */}
+      {isAdmin && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">All Users - Google Ads Status</h2>
+            <button onClick={loadAllUsers} disabled={loadingUsers} className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
+              <HiOutlineRefresh className={`w-4 h-4 ${loadingUsers ? 'animate-spin' : ''}`} /> Refresh
+            </button>
+          </div>
+          {loadingUsers ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">User</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Role</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Google Ads</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">MCC IDs</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Last Sync</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allUsers.map((u) => (
+                    <tr key={u._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                      <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{u.name}</td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{u.email}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' || u.role === 'super_admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {u.googleAdsConnected ? (
+                          <span className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs font-medium">
+                            <HiOutlineCheckCircle className="w-4 h-4" /> Connected
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Not connected</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {u.googleAdsMccIds?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {u.googleAdsMccIds.map(id => (
+                              <span key={id} className="font-mono text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded">{id}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-gray-500 dark:text-gray-400">
+                        {u.googleAdsLastSync ? new Date(u.googleAdsLastSync).toLocaleString() : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

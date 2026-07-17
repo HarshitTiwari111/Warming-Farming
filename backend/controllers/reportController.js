@@ -3,15 +3,10 @@ const Account = require('../models/Account');
 const { asyncHandler } = require('../utils/helpers');
 
 exports.generateReport = asyncHandler(async (req, res) => {
-  const Setting = require('../models/Setting');
-  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
-  const mccIds = Array.isArray(mccSetting?.value) && mccSetting.value.length > 0 ? mccSetting.value : [];
-
+  const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
   const { startDate, endDate, campaignId, accountId, country, status } = req.query;
 
-  const filter = mccIds.length > 0
-    ? { $or: [{ googleAdsCampaignId: null }, { sourceMccId: { $in: mccIds } }] }
-    : { googleAdsCampaignId: null };
+  const filter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
   if (startDate && endDate) {
     filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
   }

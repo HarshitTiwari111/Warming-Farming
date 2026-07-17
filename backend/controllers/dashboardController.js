@@ -1,20 +1,12 @@
 const Account = require('../models/Account');
 const Campaign = require('../models/Campaign');
-const Setting = require('../models/Setting');
 const ActivityLog = require('../models/ActivityLog');
 const { asyncHandler } = require('../utils/helpers');
 
 exports.getStats = asyncHandler(async (req, res) => {
-  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
-  const mccIds = Array.isArray(mccSetting?.value) && mccSetting.value.length > 0 ? mccSetting.value : [];
-
-  const acctFilter = mccIds.length > 0
-    ? { $or: [{ googleAdsCustomerId: null }, { sourceMccId: { $in: mccIds } }] }
-    : { googleAdsCustomerId: null };
-
-  const campFilter = mccIds.length > 0
-    ? { $or: [{ googleAdsCampaignId: null }, { sourceMccId: { $in: mccIds } }] }
-    : { googleAdsCampaignId: null };
+  const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
+  const acctFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
+  const campFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
 
   const [
     totalAccounts,

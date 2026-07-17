@@ -110,6 +110,7 @@ app.use('/api/activity-logs', require('./routes/activityLogRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/google-ads', require('./routes/userGoogleAdsRoutes'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running', timestamp: new Date() });

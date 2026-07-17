@@ -22,6 +22,12 @@ const userSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   lastLogin: { type: Date },
 
+  // Google Ads per-user
+  googleAdsRefreshToken: { type: String, default: null, select: false },
+  googleAdsMccIds: { type: [String], default: [] },
+  googleAdsConnected: { type: Boolean, default: false },
+  googleAdsLastSync: { type: Date, default: null },
+
   // Refresh tokens
   refreshTokens: [{
     token: { type: String, select: false },

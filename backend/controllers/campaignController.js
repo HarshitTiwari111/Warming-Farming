@@ -4,22 +4,17 @@ const { asyncHandler } = require('../utils/helpers');
 const { logActivity } = require('../middlewares/activityLogger');
 
 exports.getCampaigns = asyncHandler(async (req, res) => {
-  const Setting = require('../models/Setting');
-  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
-  const mccIds = Array.isArray(mccSetting?.value) && mccSetting.value.length > 0 ? mccSetting.value : [];
+  const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
+  const ownerFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
 
-  const mccFilter = mccIds.length > 0
-    ? { $or: [{ googleAdsCampaignId: null }, { sourceMccId: { $in: mccIds } }] }
-    : { googleAdsCampaignId: null };
-
-  const features = new APIFeatures(Campaign.find(mccFilter), req.query)
+  const features = new APIFeatures(Campaign.find(ownerFilter), req.query)
     .search(['campaignName'])
     .filter()
     .sort()
     .paginate();
 
   const campaigns = await features.query.populate('account', 'name inviteEmail').populate('createdBy', 'name');
-  const combinedFilter = { ...mccFilter, ...(features.filterObj || {}) };
+  const combinedFilter = { ...ownerFilter, ...(features.filterObj || {}) };
   const total = await Campaign.countDocuments(combinedFilter);
 
   res.json({

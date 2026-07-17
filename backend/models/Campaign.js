@@ -4,6 +4,7 @@ const campaignSchema = new mongoose.Schema({
   campaignName: { type: String, required: true, trim: true },
   googleAdsCampaignId: { type: String, default: null, index: true },
   sourceMccId: { type: String, default: null, index: true },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
   status: { type: String, enum: ['active', 'paused', 'ended', 'draft'], default: 'active' },
   clicks: { type: Number, default: 0 },

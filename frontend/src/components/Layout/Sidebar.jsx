@@ -9,7 +9,7 @@ const allMenuItems = [
   { name: 'Reports', path: '/reports', icon: HiOutlineChartBar, roles: ['super_admin', 'admin', 'manager', 'user'] },
   { name: 'Security', path: '/security', icon: HiOutlineShieldCheck, roles: ['super_admin', 'admin', 'manager', 'user'] },
   { name: 'Users', path: '/users', icon: HiOutlineUserAdd, roles: ['super_admin', 'admin', 'manager', 'user'] },
-  { name: 'Settings', path: '/settings', icon: HiOutlineCog, roles: ['super_admin', 'admin'] },
+  { name: 'Settings', path: '/settings', icon: HiOutlineCog, roles: ['super_admin', 'admin', 'manager', 'user'] },
 ]
 
 const Sidebar = ({ isOpen, onToggle }) => {

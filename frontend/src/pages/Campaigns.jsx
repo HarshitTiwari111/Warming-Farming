@@ -77,7 +77,7 @@ const Campaigns = () => {
   const handleSync = async () => {
     setSyncing(true)
     try {
-      const { data } = await api.post('/settings/google-ads-sync')
+      const { data } = await api.post('/google-ads/my-google-sync')
       toast.success(data.message || 'Sync complete')
       loadCampaigns()
     } catch (err) {

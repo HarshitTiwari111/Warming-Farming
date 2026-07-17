@@ -34,10 +34,8 @@ const GoogleCallback = () => {
 
     const saveTokens = async () => {
       try {
-        await api.post('/settings/google-ads-save-token', {
+        await api.post('/google-ads/my-google-connect', {
           refresh_token: bestToken,
-          access_token: accessToken,
-          raw_params: allParams
         })
         setStatus('success')
         toast.success('Google Ads connected successfully!')

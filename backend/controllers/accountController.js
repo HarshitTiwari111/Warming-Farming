@@ -5,15 +5,10 @@ const { asyncHandler } = require('../utils/helpers');
 const { logActivity } = require('../middlewares/activityLogger');
 
 exports.getAccounts = asyncHandler(async (req, res) => {
-  const Setting = require('../models/Setting');
-  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
-  const mccIds = Array.isArray(mccSetting?.value) && mccSetting.value.length > 0 ? mccSetting.value : [];
+  const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
+  const ownerFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
 
-  const mccFilter = mccIds.length > 0
-    ? { $or: [{ googleAdsCustomerId: null }, { sourceMccId: { $in: mccIds } }] }
-    : { googleAdsCustomerId: null };
-
-  const baseQuery = Account.find(mccFilter);
+  const baseQuery = Account.find(ownerFilter);
   const features = new APIFeatures(baseQuery, req.query)
     .search(['name', 'inviteEmail'])
     .filter()
@@ -21,7 +16,7 @@ exports.getAccounts = asyncHandler(async (req, res) => {
     .paginate();
 
   const accounts = await features.query.populate('createdBy', 'name email');
-  const combinedFilter = { ...mccFilter, ...(features.filterObj || {}) };
+  const combinedFilter = { ...ownerFilter, ...(features.filterObj || {}) };
   const total = await Account.countDocuments(combinedFilter);
 
   res.json({
@@ -39,6 +34,7 @@ exports.getAccount = asyncHandler(async (req, res) => {
 
 exports.createAccount = asyncHandler(async (req, res) => {
   req.body.createdBy = req.user._id;
+  req.body.owner = req.user._id;
   const account = await Account.create(req.body);
 
   // Auto-create a campaign for the new account
@@ -67,6 +63,7 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
     const account = await Account.create({
       ...accountData,
       name,
+      owner: req.user._id,
       createdBy: req.user._id,
     });
 
