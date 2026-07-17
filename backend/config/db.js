@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const seedAdmin = async () => {
   try {
     const User = require('../models/User');
-    const existing = await User.findOne({ role: { $in: ['admin', 'super_admin'] } });
+    const existing = await User.findOne({ role: 'admin' });
     if (existing) return;
     await User.create({
       name: 'Admin',

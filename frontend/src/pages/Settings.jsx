@@ -8,7 +8,7 @@ const GOOGLE_AUTH_URL = 'https://secure.dataram.workers.dev/auth/login'
 
 const Settings = () => {
   const { user } = useSelector((state) => state.auth)
-  const isAdmin = ['admin', 'super_admin'].includes(user?.role)
+  const isAdmin = user?.role === 'admin'
 
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -237,7 +237,7 @@ const Settings = () => {
                       <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{u.name}</td>
                       <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{u.email}</td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' || u.role === 'super_admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
                           {u.role}
                         </span>
                       </td>

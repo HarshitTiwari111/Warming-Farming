@@ -9,6 +9,6 @@ router.post('/my-google-connect', saveMyToken);
 router.post('/my-google-disconnect', disconnectMyGoogle);
 router.post('/my-mcc-ids', saveMyMccIds);
 router.post('/my-google-sync', syncMyAccounts);
-router.get('/admin/users-google-status', authorize('admin', 'super_admin'), adminGetAllUsersGoogleStatus);
+router.get('/admin/users-google-status', authorize('admin'), adminGetAllUsersGoogleStatus);
 
 module.exports = router;

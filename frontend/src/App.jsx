@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children }) => {
 
 const AdminRoute = ({ children }) => {
   const { user } = useSelector((state) => state.auth)
-  if (!['admin', 'super_admin'].includes(user?.role)) return <Navigate to="/" replace />
+  if (user?.role !== 'admin') return <Navigate to="/" replace />
   return children
 }
 
@@ -41,7 +41,7 @@ const App = () => {
         <Route path="reports" element={<Reports />} />
         <Route path="security" element={<Security />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="users" element={<Users />} />
+        <Route path="users" element={<AdminRoute><Users /></AdminRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

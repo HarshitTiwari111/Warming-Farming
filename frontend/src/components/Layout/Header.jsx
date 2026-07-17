@@ -105,7 +105,7 @@ const Header = ({ onMenuClick }) => {
             <div className="w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center text-sm font-semibold">{user?.name?.charAt(0)?.toUpperCase()}</div>
             <div className="hidden sm:flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{user?.name}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${user?.role === 'admin' ? 'bg-purple-100 text-purple-700' : user?.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{user?.role}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${user?.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>{user?.role}</span>
             </div>
           </button>
           {showDropdown && (

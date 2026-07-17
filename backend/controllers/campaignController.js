@@ -4,7 +4,7 @@ const { asyncHandler } = require('../utils/helpers');
 const { logActivity } = require('../middlewares/activityLogger');
 
 exports.getCampaigns = asyncHandler(async (req, res) => {
-  const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
+  const isAdmin = req.user.role === 'admin';
   const ownerFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
 
   const features = new APIFeatures(Campaign.find(ownerFilter), req.query)

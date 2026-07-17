@@ -3,18 +3,19 @@ import { useSelector } from 'react-redux'
 import { HiOutlineHome, HiOutlineUserGroup, HiOutlineSpeakerphone, HiOutlineFire, HiOutlineChartBar, HiOutlineCog, HiOutlineX, HiOutlineUserAdd, HiOutlineShieldCheck } from 'react-icons/hi'
 
 const allMenuItems = [
-  { name: 'Dashboard', path: '/', icon: HiOutlineHome, roles: ['super_admin', 'admin', 'manager', 'user'] },
-  { name: 'Accounts', path: '/accounts', icon: HiOutlineUserGroup, roles: ['super_admin', 'admin', 'manager', 'user'] },
-  { name: 'Campaigns', path: '/campaigns', icon: HiOutlineSpeakerphone, roles: ['super_admin', 'admin', 'manager', 'user'] },
-  { name: 'Reports', path: '/reports', icon: HiOutlineChartBar, roles: ['super_admin', 'admin', 'manager', 'user'] },
-  { name: 'Security', path: '/security', icon: HiOutlineShieldCheck, roles: ['super_admin', 'admin', 'manager', 'user'] },
-  { name: 'Users', path: '/users', icon: HiOutlineUserAdd, roles: ['super_admin', 'admin', 'manager', 'user'] },
-  { name: 'Settings', path: '/settings', icon: HiOutlineCog, roles: ['super_admin', 'admin', 'manager', 'user'] },
+  { name: 'Dashboard', path: '/', icon: HiOutlineHome },
+  { name: 'Accounts', path: '/accounts', icon: HiOutlineUserGroup },
+  { name: 'Campaigns', path: '/campaigns', icon: HiOutlineSpeakerphone },
+  { name: 'Reports', path: '/reports', icon: HiOutlineChartBar },
+  { name: 'Security', path: '/security', icon: HiOutlineShieldCheck },
+  { name: 'Users', path: '/users', icon: HiOutlineUserAdd, adminOnly: true },
+  { name: 'Settings', path: '/settings', icon: HiOutlineCog },
 ]
 
 const Sidebar = ({ isOpen, onToggle }) => {
   const { user } = useSelector((state) => state.auth)
-  const menuItems = allMenuItems.filter(item => item.roles.includes(user?.role || 'user'))
+  const isAdmin = user?.role === 'admin'
+  const menuItems = allMenuItems.filter(item => !item.adminOnly || isAdmin)
 
   return (
     <>
@@ -37,14 +38,12 @@ const Sidebar = ({ isOpen, onToggle }) => {
             </NavLink>
           ))}
         </nav>
-        {['admin', 'super_admin'].includes(user?.role) && (
-          <div className="absolute bottom-4 left-3 right-3">
-            <div className="bg-slate-800 rounded-lg px-3 py-2 border border-slate-700/50">
-              <p className="text-xs font-semibold text-blue-400">{user?.role === 'super_admin' ? 'Super Admin' : 'Admin Panel'}</p>
-              <p className="text-xs text-slate-400">{user?.email}</p>
-            </div>
+        <div className="absolute bottom-4 left-3 right-3">
+          <div className="bg-slate-800 rounded-lg px-3 py-2 border border-slate-700/50">
+            <p className="text-xs font-semibold text-blue-400">{isAdmin ? 'Admin Panel' : 'User'}</p>
+            <p className="text-xs text-slate-400">{user?.email}</p>
           </div>
-        )}
+        </div>
       </aside>
     </>
   )

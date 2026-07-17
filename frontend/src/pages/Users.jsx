@@ -11,15 +11,12 @@ import toast from 'react-hot-toast'
 const initialForm = { name: '', email: '', password: '', role: 'user' }
 
 const roleBadgeStyles = {
-  super_admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  manager: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   user: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
 }
 
 const Users = () => {
   const { user: currentUser } = useSelector((state) => state.auth)
-  const isAdmin = ['admin', 'super_admin'].includes(currentUser?.role)
 
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -33,20 +30,14 @@ const Users = () => {
   const loadUsers = useCallback(async () => {
     setLoading(true)
     try {
-      if (isAdmin) {
-        const { data } = await api.get('/users', { params: { page, limit: 10 } })
-        setUsers(data.data || [])
-        setPagination(data.pagination)
-      } else {
-        const { data } = await api.get('/auth/me')
-        setUsers(data.data ? [data.data] : [])
-        setPagination(null)
-      }
+      const { data } = await api.get('/users', { params: { page, limit: 10 } })
+      setUsers(data.data || [])
+      setPagination(data.pagination)
     } catch {
       toast.error('Failed to load users')
     }
     setLoading(false)
-  }, [page, isAdmin])
+  }, [page])
 
   useEffect(() => { loadUsers() }, [loadUsers])
 
@@ -54,12 +45,8 @@ const Users = () => {
     e.preventDefault()
     try {
       if (selectedUser) {
-        if (isAdmin) {
-          const updateData = { name: form.name, email: form.email, role: form.role }
-          await api.put(`/users/${selectedUser._id}`, updateData)
-        } else {
-          await api.put('/auth/profile', { name: form.name, email: form.email })
-        }
+        const updateData = { name: form.name, email: form.email, role: form.role }
+        await api.put(`/users/${selectedUser._id}`, updateData)
         toast.success('User updated')
       } else {
         if (!form.password || form.password.length < 8) {
@@ -106,10 +93,10 @@ const Users = () => {
       </div>
     )},
     { key: 'email', label: 'Email', sortable: true, filterable: true },
-    { key: 'role', label: 'Role', filterable: true, filterType: 'select', filterOptions: [{value:'super_admin',label:'Super Admin'},{value:'admin',label:'Admin'},{value:'manager',label:'Manager'},{value:'user',label:'User'}], render: (row) => (
+    { key: 'role', label: 'Role', filterable: true, filterType: 'select', filterOptions: [{value:'admin',label:'Admin'},{value:'user',label:'User'}], render: (row) => (
       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${roleBadgeStyles[row.role] || roleBadgeStyles.user}`}>
-        {['admin', 'super_admin'].includes(row.role) && <HiOutlineBadgeCheck className="w-3 h-3" />}
-        {row.role === 'super_admin' ? 'Super Admin' : row.role}
+        {row.role === 'admin' && <HiOutlineBadgeCheck className="w-3 h-3" />}
+        {row.role}
       </span>
     )},
     { key: 'isActive', label: 'Status', render: (row) => (
@@ -123,7 +110,7 @@ const Users = () => {
       </span>
     )},
     { key: 'createdAt', label: 'Joined', sortable: true, render: (row) => new Date(row.createdAt).toLocaleDateString() },
-    ...(isAdmin ? [{
+    {
       key: 'actions', label: 'Actions', render: (row) => (
         <div className="flex items-center gap-2">
           <button onClick={() => handleEdit(row)} className="text-gray-500 hover:text-primary-600"><HiOutlinePencil className="w-4 h-4" /></button>
@@ -132,18 +119,16 @@ const Users = () => {
           )}
         </div>
       ),
-    }] : []),
+    },
   ]
 
   return (
     <div>
-      {isAdmin && (
-        <div className="flex justify-end mb-6">
-          <button onClick={() => { setSelectedUser(null); setForm(initialForm); setShowModal(true) }} className="btn-primary flex items-center gap-2">
-            <HiOutlinePlus className="w-4 h-4" /> Add User
-          </button>
-        </div>
-      )}
+      <div className="flex justify-end mb-6">
+        <button onClick={() => { setSelectedUser(null); setForm(initialForm); setShowModal(true) }} className="btn-primary flex items-center gap-2">
+          <HiOutlinePlus className="w-4 h-4" /> Add User
+        </button>
+      </div>
 
       <DataTable columns={columns} data={users} loading={loading} emptyMessage="No users found" />
       {pagination && <div className="mt-4"><Pagination currentPage={pagination.page} totalPages={pagination.pages} onPageChange={setPage} /></div>}
@@ -164,23 +149,17 @@ const Users = () => {
               <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="input-field" required minLength={8} placeholder="Min 8 chars (A-z, 0-9, !@#)" autoComplete="new-password" />
             </div>
           )}
-          {isAdmin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="input-field">
-                <option value="user">User</option>
-                <option value="manager">Manager</option>
-                <option value="admin">Admin</option>
-                {currentUser?.role === 'super_admin' && <option value="super_admin">Super Admin</option>}
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {form.role === 'super_admin' ? 'Full unrestricted access to everything' :
-                 form.role === 'admin' ? 'Full access to all features including user management' :
-                 form.role === 'manager' ? 'Can manage accounts, campaigns, and view reports' :
-                 'Basic access to own accounts, campaigns, and reports'}
-              </p>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="input-field">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {form.role === 'admin' ? 'Full access — can manage all users, see all data, and configure settings' :
+               'Can connect own Google Ads, manage own accounts/campaigns, and view own reports'}
+            </p>
+          </div>
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary">{selectedUser ? 'Update' : 'Create User'}</button>

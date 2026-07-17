@@ -4,7 +4,7 @@ const ActivityLog = require('../models/ActivityLog');
 const { asyncHandler } = require('../utils/helpers');
 
 exports.getStats = asyncHandler(async (req, res) => {
-  const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
+  const isAdmin = req.user.role === 'admin';
   const acctFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
   const campFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
 
