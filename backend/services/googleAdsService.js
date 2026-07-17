@@ -100,6 +100,42 @@ async function fetchCampaigns(customerId, refreshToken, loginCustomerId) {
   }));
 }
 
+async function createClientAccount(mccId, refreshToken, { name, currencyCode, timeZone, emailAddress }) {
+  const url = `${WORKER_BASE}/customers/${mccId}:createCustomerClient`;
+  const body = {
+    customer_id: mccId,
+    customer_client: {
+      descriptive_name: name,
+      currency_code: currencyCode || 'USD',
+      time_zone: timeZone || 'Asia/Kolkata',
+    },
+  };
+  if (emailAddress) {
+    body.email_address = emailAddress;
+    body.access_role = 'ADMIN';
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'x-user-refresh-token': refreshToken,
+      'login-customer-id': mccId,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Create account failed ${response.status}: ${text.substring(0, 500)}`);
+  }
+
+  const data = await response.json();
+  const resourceName = data.resourceName || '';
+  const customerId = resourceName.replace('customers/', '').replace(/\/customerClients\//, '/').split('/').pop() || '';
+  return { customerId, resourceName };
+}
+
 async function fetchSearchTerms(customerId, refreshToken, loginCustomerId) {
   const query = `SELECT search_term_view.search_term, metrics.clicks, metrics.impressions, metrics.cost_micros FROM search_term_view WHERE segments.date DURING LAST_30_DAYS LIMIT 100`;
   const rows = await workerQuery(customerId, query, refreshToken, loginCustomerId);
@@ -119,6 +155,7 @@ module.exports = {
   listAccessibleCustomers,
   findMccId,
   fetchClientAccounts,
+  createClientAccount,
   fetchCampaigns,
   fetchSearchTerms,
 };
