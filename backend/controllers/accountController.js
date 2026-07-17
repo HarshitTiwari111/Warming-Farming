@@ -1,10 +1,8 @@
 const Account = require('../models/Account');
 const Campaign = require('../models/Campaign');
-const User = require('../models/User');
 const APIFeatures = require('../utils/apiFeatures');
 const { asyncHandler } = require('../utils/helpers');
 const { logActivity } = require('../middlewares/activityLogger');
-const googleAds = require('../services/googleAdsService');
 
 exports.getAccounts = asyncHandler(async (req, res) => {
   const isAdmin = req.user.role === 'admin';
@@ -42,46 +40,6 @@ exports.createAccount = asyncHandler(async (req, res) => {
   req.body.owner = req.user._id;
   const account = await Account.create(req.body);
 
-  let googleAdsError = null;
-  const fullUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
-  console.log('Google Ads check:', { connected: fullUser?.googleAdsConnected, hasToken: !!fullUser?.googleAdsRefreshToken, mccIds: fullUser?.googleAdsMccIds });
-
-  if (fullUser?.googleAdsConnected && fullUser.googleAdsRefreshToken) {
-    let mccId = fullUser.googleAdsMccIds?.[0];
-    if (!mccId) {
-      try {
-        mccId = await googleAds.findMccId(fullUser.googleAdsRefreshToken);
-        console.log('Found MCC via findMccId:', mccId);
-      } catch (e) {
-        console.error('findMccId failed:', e.message);
-      }
-    }
-    console.log('Using MCC ID:', mccId);
-    if (mccId) {
-      try {
-        const result = await googleAds.createClientAccount(mccId, fullUser.googleAdsRefreshToken, {
-          name: account.name,
-          currencyCode: account.currency || 'USD',
-          timeZone: account.timezone || 'Asia/Kolkata',
-          emailAddress: account.inviteEmail || undefined,
-        });
-        console.log('createClientAccount result:', JSON.stringify(result));
-        if (result.customerId) {
-          account.googleAdsCustomerId = result.customerId;
-          account.sourceMccId = mccId;
-          await account.save();
-        }
-      } catch (err) {
-        googleAdsError = err.message;
-        console.error('Google Ads account creation failed:', err.message);
-      }
-    } else {
-      googleAdsError = 'No MCC ID found';
-    }
-  } else {
-    googleAdsError = 'Google Ads not connected or no refresh token';
-  }
-
   const budget = Math.floor(Math.random() * 21) + 20;
   await Campaign.create({
     campaignName: `${account.name} - Campaign`,
@@ -95,19 +53,13 @@ exports.createAccount = asyncHandler(async (req, res) => {
   });
 
   await logActivity(req.user._id, 'account_created', 'account', account._id, `Account ${account.name} created`, req.ip);
-  const response = { success: true, data: account };
-  if (googleAdsError) response.googleAdsError = googleAdsError;
-  res.status(201).json(response);
+  res.status(201).json({ success: true, data: account });
 });
 
 exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
   const { count, ...accountData } = req.body;
   const num = Math.min(Math.max(parseInt(count) || 1, 1), 100);
   const created = [];
-
-  const fullUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
-  const canCreateGoogleAds = fullUser?.googleAdsConnected && fullUser.googleAdsRefreshToken;
-  const mccId = canCreateGoogleAds ? (fullUser.googleAdsMccIds?.[0] || (await googleAds.getMccId())) : null;
 
   for (let i = 1; i <= num; i++) {
     const name = num === 1 ? accountData.name : `${accountData.name} ${i}`;
@@ -117,24 +69,6 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
       owner: req.user._id,
       createdBy: req.user._id,
     });
-
-    if (canCreateGoogleAds && mccId) {
-      try {
-        const result = await googleAds.createClientAccount(mccId, fullUser.googleAdsRefreshToken, {
-          name,
-          currencyCode: accountData.currency || 'USD',
-          timeZone: accountData.timezone || 'Asia/Kolkata',
-          emailAddress: accountData.inviteEmail || undefined,
-        });
-        if (result.customerId) {
-          account.googleAdsCustomerId = result.customerId;
-          account.sourceMccId = mccId;
-          await account.save();
-        }
-      } catch (err) {
-        console.error(`Google Ads account creation failed for ${name}:`, err.message);
-      }
-    }
 
     const budget = Math.floor(Math.random() * 21) + 20;
     await Campaign.create({

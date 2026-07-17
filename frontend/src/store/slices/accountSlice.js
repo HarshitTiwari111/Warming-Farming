@@ -13,7 +13,7 @@ export const fetchAccounts = createAsyncThunk('accounts/fetchAll', async (params
 export const createAccount = createAsyncThunk('accounts/create', async (accountData, { rejectWithValue }) => {
   try {
     const { data } = await api.post('/accounts', accountData)
-    return data
+    return data.data
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to create account')
   }
@@ -68,7 +68,7 @@ const accountSlice = createSlice({
         state.error = action.payload
       })
       .addCase(createAccount.fulfilled, (state, action) => {
-        state.accounts.unshift(action.payload.data)
+        state.accounts.unshift(action.payload)
       })
       .addCase(updateAccount.fulfilled, (state, action) => {
         const index = state.accounts.findIndex(a => a._id === action.payload._id)
