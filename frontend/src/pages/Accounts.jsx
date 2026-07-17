@@ -120,25 +120,27 @@ const Accounts = () => {
     },
   ]
 
+  const tableActions = (
+    <>
+      {!isAdmin && (
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50"
+        >
+          <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? 'Syncing...' : 'Sync from Google Ads'}
+        </button>
+      )}
+      <button onClick={() => { setSelectedAccount(null); setForm(initialForm); setShowModal(true) }} className="btn-primary flex items-center gap-2">
+        <HiOutlinePlus className="w-4 h-4" /> Add Accounts
+      </button>
+    </>
+  )
+
   return (
     <div>
-      <div className="flex justify-end gap-3 mb-6">
-        {!isAdmin && (
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing...' : 'Sync from Google Ads'}
-          </button>
-        )}
-        <button onClick={() => { setSelectedAccount(null); setForm(initialForm); setShowModal(true) }} className="btn-primary flex items-center gap-2">
-          <HiOutlinePlus className="w-4 h-4" /> Add Accounts
-        </button>
-      </div>
-
-      <DataTable columns={columns} data={accounts} loading={loading} emptyMessage="No accounts found" />
+      <DataTable columns={columns} data={accounts} loading={loading} emptyMessage="No accounts found" actionButtons={tableActions} />
       {pagination && <div className="mt-4"><Pagination currentPage={pagination.page} totalPages={pagination.pages} onPageChange={setPage} /></div>}
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={selectedAccount ? 'Edit Account' : 'Add Accounts'}>
