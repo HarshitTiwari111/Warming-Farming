@@ -79,7 +79,7 @@ exports.syncMyAccounts = asyncHandler(async (req, res) => {
           googleAdsCustomerId: acct.customerId,
           sourceMccId: mccId,
           owner: user._id,
-          inviteEmail: acct.email || user.email,
+          inviteEmail: acct.email || '',
           currency: acct.currency || 'USD',
           timezone: acct.timezone || 'Asia/Kolkata',
           status: acct.status === 'ENABLED' ? 'active' : acct.status === 'REMOVED' ? 'ended' : 'paused',

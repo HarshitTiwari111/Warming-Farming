@@ -2,7 +2,7 @@ const { body } = require('express-validator');
 
 const accountValidator = [
   body('name').trim().notEmpty().withMessage('Account name is required'),
-  body('inviteEmail').isEmail().withMessage('Please provide a valid email'),
+  body('inviteEmail').optional().isEmail().withMessage('Please provide a valid email'),
   body('timezone').optional().trim().notEmpty().withMessage('Timezone cannot be empty'),
   body('currency').optional().trim().notEmpty().withMessage('Currency cannot be empty'),
   body('billingBudget').optional().isNumeric().withMessage('Billing budget must be a number'),
