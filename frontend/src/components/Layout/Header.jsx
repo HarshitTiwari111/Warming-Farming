@@ -61,7 +61,7 @@ const Header = ({ onMenuClick }) => {
   }
   const currentPage = getPageInfo()
 
-  const handleLogout = () => { dispatch(logoutAsync()); navigate('/login') }
+  const handleLogout = async () => { await dispatch(logoutAsync()); navigate('/login') }
 
   const handleChangePassword = async (e) => {
     e.preventDefault()

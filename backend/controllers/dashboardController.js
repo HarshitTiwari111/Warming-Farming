@@ -47,7 +47,8 @@ exports.getStats = asyncHandler(async (req, res) => {
     { $group: { _id: '$device', count: { $sum: 1 } } }
   ]);
 
-  const recentActivity = await ActivityLog.find()
+  const activityFilter = isAdmin ? {} : { user: req.user._id };
+  const recentActivity = await ActivityLog.find(activityFilter)
     .populate('user', 'name')
     .sort('-createdAt')
     .limit(10);

@@ -27,12 +27,12 @@ const deviceFingerprint = (info) => {
 };
 
 exports.register = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     return res.status(400).json({ success: false, message: 'Email already registered' });
   }
-  const user = await User.create({ name, email, password, role: role || 'user' });
+  const user = await User.create({ name, email, password, role: 'user' });
   const token = generateToken(user._id);
   const refreshToken = generateRefreshToken(user._id);
 

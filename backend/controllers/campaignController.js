@@ -29,31 +29,44 @@ exports.getCampaign = asyncHandler(async (req, res) => {
     .populate('account', 'name inviteEmail')
     .populate('createdBy', 'name email');
   if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found' });
+  if (req.user.role !== 'admin' && campaign.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
   res.json({ success: true, data: campaign });
 });
 
 exports.updateCampaign = asyncHandler(async (req, res) => {
-  const campaign = await Campaign.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  const campaign = await Campaign.findById(req.params.id);
   if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found' });
+  if (req.user.role !== 'admin' && campaign.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  Object.assign(campaign, req.body);
+  await campaign.save({ runValidators: true });
   await logActivity(req.user._id, 'campaign_updated', 'campaign', campaign._id, `Campaign ${campaign.campaignName} updated`, req.ip);
   res.json({ success: true, data: campaign });
 });
 
 exports.deleteCampaign = asyncHandler(async (req, res) => {
-  const campaign = await Campaign.findByIdAndDelete(req.params.id);
+  const campaign = await Campaign.findById(req.params.id);
   if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found' });
+  if (req.user.role !== 'admin' && campaign.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  await Campaign.findByIdAndDelete(req.params.id);
   await logActivity(req.user._id, 'campaign_deleted', 'campaign', campaign._id, `Campaign ${campaign.campaignName} deleted`, req.ip);
   res.json({ success: true, message: 'Campaign deleted successfully' });
 });
 
 exports.updateCampaignStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const campaign = await Campaign.findByIdAndUpdate(
-    req.params.id,
-    { status },
-    { new: true, runValidators: true }
-  );
+  const campaign = await Campaign.findById(req.params.id);
   if (!campaign) return res.status(404).json({ success: false, message: 'Campaign not found' });
+  if (req.user.role !== 'admin' && campaign.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  campaign.status = status;
+  await campaign.save({ runValidators: true });
   await logActivity(req.user._id, 'campaign_status_changed', 'campaign', campaign._id, `Status changed to ${status}`, req.ip);
   res.json({ success: true, data: campaign });
 });

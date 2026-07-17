@@ -25,7 +25,6 @@ const GoogleCallback = () => {
     const code = allParams.code
 
     const bestToken = refreshToken || accessToken || code
-    || Object.values(allParams).find(v => typeof v === 'string' && v.length > 20)
 
     if (!bestToken && Object.keys(allParams).length === 0) {
       setStatus('no_params')

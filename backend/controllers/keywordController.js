@@ -48,13 +48,22 @@ exports.createBulkKeywords = asyncHandler(async (req, res) => {
 });
 
 exports.updateKeyword = asyncHandler(async (req, res) => {
-  const keyword = await Keyword.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  const keyword = await Keyword.findById(req.params.id).populate({ path: 'campaign', select: 'owner' });
   if (!keyword) return res.status(404).json({ success: false, message: 'Keyword not found' });
+  if (req.user.role !== 'admin' && keyword.campaign?.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  Object.assign(keyword, req.body);
+  await keyword.save({ runValidators: true });
   res.json({ success: true, data: keyword });
 });
 
 exports.deleteKeyword = asyncHandler(async (req, res) => {
-  const keyword = await Keyword.findByIdAndDelete(req.params.id);
+  const keyword = await Keyword.findById(req.params.id).populate({ path: 'campaign', select: 'owner' });
   if (!keyword) return res.status(404).json({ success: false, message: 'Keyword not found' });
+  if (req.user.role !== 'admin' && keyword.campaign?.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  await Keyword.findByIdAndDelete(req.params.id);
   res.json({ success: true, message: 'Keyword deleted successfully' });
 });

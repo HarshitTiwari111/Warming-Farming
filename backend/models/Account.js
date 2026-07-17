@@ -11,7 +11,11 @@ const accountSchema = new mongoose.Schema({
   inviteEmail: { type: String, required: true, trim: true, lowercase: true },
   autoTagging: { type: Boolean, default: false },
   audienceUnknown: { type: Boolean, default: false },
-  status: { type: String, enum: ['active', 'pending', 'suspended', 'paused'], default: 'active' },
+  status: { type: String, enum: ['active', 'pending', 'suspended', 'paused', 'warming', 'ended'], default: 'active' },
+  warmingStage: { type: Number, default: 0 },
+  warmingSchedule: { type: Array, default: [] },
+  warmingStartDate: { type: Date, default: null },
+  isDeleted: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 

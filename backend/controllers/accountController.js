@@ -29,6 +29,9 @@ exports.getAccounts = asyncHandler(async (req, res) => {
 exports.getAccount = asyncHandler(async (req, res) => {
   const account = await Account.findById(req.params.id).populate('createdBy', 'name email');
   if (!account) return res.status(404).json({ success: false, message: 'Account not found' });
+  if (req.user.role !== 'admin' && account.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
   res.json({ success: true, data: account });
 });
 
@@ -86,19 +89,24 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
 });
 
 exports.updateAccount = asyncHandler(async (req, res) => {
-  const account = await Account.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true, runValidators: true }
-  );
+  const account = await Account.findById(req.params.id);
   if (!account) return res.status(404).json({ success: false, message: 'Account not found' });
+  if (req.user.role !== 'admin' && account.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  Object.assign(account, req.body);
+  await account.save({ runValidators: true });
   await logActivity(req.user._id, 'account_updated', 'account', account._id, `Account ${account.name} updated`, req.ip);
   res.json({ success: true, data: account });
 });
 
 exports.deleteAccount = asyncHandler(async (req, res) => {
-  const account = await Account.findByIdAndDelete(req.params.id);
+  const account = await Account.findById(req.params.id);
   if (!account) return res.status(404).json({ success: false, message: 'Account not found' });
+  if (req.user.role !== 'admin' && account.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  await Account.findByIdAndDelete(req.params.id);
   await logActivity(req.user._id, 'account_deleted', 'account', account._id, `Account ${account.name} deleted`, req.ip);
   res.json({ success: true, message: 'Account deleted successfully' });
 });

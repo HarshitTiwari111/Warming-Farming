@@ -42,7 +42,8 @@ exports.exportReport = asyncHandler(async (req, res) => {
   const { format } = req.params;
   const { startDate, endDate, status, search, country } = req.query;
 
-  const filter = {};
+  const isAdmin = req.user.role === 'admin';
+  const filter = isAdmin ? { owner: { $ne: null } } : { owner: req.user._id };
   if (startDate && endDate) filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
   if (status) filter.status = status;
   if (country) filter.country = { $regex: country, $options: 'i' };

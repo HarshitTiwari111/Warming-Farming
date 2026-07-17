@@ -39,7 +39,7 @@ const campaignSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCampaigns.pending, (state) => { state.loading = true })
+      .addCase(fetchCampaigns.pending, (state) => { state.loading = true; state.error = null })
       .addCase(fetchCampaigns.fulfilled, (state, action) => {
         state.loading = false
         state.campaigns = action.payload.data

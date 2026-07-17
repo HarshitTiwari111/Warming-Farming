@@ -24,8 +24,12 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
 
     Object.entries(filters).forEach(([key, value]) => {
       if (!value) return
+      const col = columns.find(c => c.key === key)
       result = result.filter(row => {
         const cellValue = String(row[key] ?? '').toLowerCase()
+        if (col?.filterType === 'select') {
+          return cellValue === value.toLowerCase()
+        }
         return cellValue.includes(value.toLowerCase())
       })
     })

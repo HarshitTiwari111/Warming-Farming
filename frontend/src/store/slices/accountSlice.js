@@ -57,7 +57,7 @@ const accountSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAccounts.pending, (state) => { state.loading = true })
+      .addCase(fetchAccounts.pending, (state) => { state.loading = true; state.error = null })
       .addCase(fetchAccounts.fulfilled, (state, action) => {
         state.loading = false
         state.accounts = action.payload.data

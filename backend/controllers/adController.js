@@ -13,7 +13,8 @@ exports.getAds = asyncHandler(async (req, res) => {
     .paginate();
 
   const ads = await features.query.populate('campaign', 'campaignName');
-  const total = await Ad.countDocuments(filter);
+  const countFilter = features.searchFilter ? { ...filter, ...features.searchFilter } : filter;
+  const total = await Ad.countDocuments(countFilter);
 
   res.json({
     success: true,
@@ -31,20 +32,32 @@ exports.createAd = asyncHandler(async (req, res) => {
 });
 
 exports.getAd = asyncHandler(async (req, res) => {
-  const ad = await Ad.findById(req.params.id).populate('campaign', 'campaignName');
+  const ad = await Ad.findById(req.params.id).populate({ path: 'campaign', select: 'campaignName owner' });
   if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+  if (req.user.role !== 'admin' && ad.campaign?.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
   res.json({ success: true, data: ad });
 });
 
 exports.updateAd = asyncHandler(async (req, res) => {
-  const ad = await Ad.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  const ad = await Ad.findById(req.params.id).populate({ path: 'campaign', select: 'owner' });
   if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+  if (req.user.role !== 'admin' && ad.campaign?.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  Object.assign(ad, req.body);
+  await ad.save({ runValidators: true });
   await logActivity(req.user._id, 'ad_updated', 'ad', ad._id, `Ad copy updated`, req.ip);
   res.json({ success: true, data: ad });
 });
 
 exports.deleteAd = asyncHandler(async (req, res) => {
-  const ad = await Ad.findByIdAndDelete(req.params.id);
+  const ad = await Ad.findById(req.params.id).populate({ path: 'campaign', select: 'owner' });
   if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+  if (req.user.role !== 'admin' && ad.campaign?.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  await Ad.findByIdAndDelete(req.params.id);
   res.json({ success: true, message: 'Ad deleted successfully' });
 });
