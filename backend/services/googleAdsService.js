@@ -63,30 +63,29 @@ async function workerMutate(customerId, operations, refreshToken, loginCustomerI
     throw new Error(`Mutate ${response.status}: ${text.substring(0, 300)}`);
   }
 
-  const data = await response.json();
-  return data.mutateOperationResponses || [];
+  return response.json();
 }
 
 async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mccId) {
   const ts = Date.now();
 
-  const budgetRes = await workerMutate(customerId, [{
+  const budgetResult = await workerMutate(customerId, [{
     campaignBudgetOperation: {
       create: {
         name: `Budget_${customerId}_${ts}`,
-        amountMicros: '1000000',
+        amountMicros: String(1000000),
         deliveryMethod: 'STANDARD',
         explicitlyShared: false,
       },
     },
   }], refreshToken, mccId);
-  const budgetResource = budgetRes[0]?.campaignBudgetResult?.resourceName;
+  const budgetResource = budgetResult.mutateOperationResponses?.[0]?.campaignBudgetResult?.resourceName;
   if (!budgetResource) throw new Error('Failed to create campaign budget');
 
-  const campaignRes = await workerMutate(customerId, [{
+  const campaignResult = await workerMutate(customerId, [{
     campaignOperation: {
       create: {
-        name: `${accountName}_Campaign_${ts}`,
+        name: `Warmup_${accountName}_${ts}`,
         advertisingChannelType: 'SEARCH',
         status: 'PAUSED',
         campaignBudget: budgetResource,
@@ -96,24 +95,25 @@ async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mc
           targetSearchNetwork: false,
           targetContentNetwork: false,
         },
+        containsEuPoliticalAdvertising: 2,
       },
     },
   }], refreshToken, mccId);
-  const campaignResource = campaignRes[0]?.campaignResult?.resourceName;
+  const campaignResource = campaignResult.mutateOperationResponses?.[0]?.campaignResult?.resourceName;
   if (!campaignResource) throw new Error('Failed to create campaign');
 
-  const adGroupRes = await workerMutate(customerId, [{
+  const adGroupResult = await workerMutate(customerId, [{
     adGroupOperation: {
       create: {
         name: 'Ad Group 1',
         campaign: campaignResource,
         type: 'SEARCH_STANDARD',
-        cpcBidMicros: '500000',
+        cpcBidMicros: String(500000),
         status: 'ENABLED',
       },
     },
   }], refreshToken, mccId);
-  const adGroupResource = adGroupRes[0]?.adGroupResult?.resourceName;
+  const adGroupResource = adGroupResult.mutateOperationResponses?.[0]?.adGroupResult?.resourceName;
   if (!adGroupResource) throw new Error('Failed to create ad group');
 
   await workerMutate(customerId, [
