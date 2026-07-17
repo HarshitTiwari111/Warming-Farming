@@ -69,7 +69,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
   return (
     <div className="card overflow-x-auto">
       {(hasFilters || actionButtons) && (
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 mb-4">
           {hasFilters && columns.filter(col => col.filterable).map((col) => (
             col.filterType === 'select' ? (
               <select
@@ -84,7 +84,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
                 ))}
               </select>
             ) : (
-              <div key={`filter-${col.key}`} className="relative min-w-0 max-w-[200px]">
+              <div key={`filter-${col.key}`} className="relative min-w-0 flex-1 max-w-[180px]">
                 <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <input
                   type="text"
@@ -111,7 +111,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
         <thead>
           <tr className="border-b border-gray-200 dark:border-gray-700">
             {columns.map((col) => (
-              <th key={col.key} className="text-left py-3 px-4">
+              <th key={col.key} className="text-left py-3 px-3 whitespace-nowrap">
                 <div
                   className={`flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${col.sortable ? 'cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200' : ''}`}
                   onClick={() => col.sortable && handleSort(col.key)}
@@ -139,7 +139,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
             filteredAndSortedData.map((row, rowIndex) => (
               <tr key={row._id || rowIndex} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 {columns.map((col) => (
-                  <td key={col.key} className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">
+                  <td key={col.key} className="py-3 px-3 text-sm text-gray-700 dark:text-gray-300">
                     {col.render ? col.render(row) : row[col.key]}
                   </td>
                 ))}
