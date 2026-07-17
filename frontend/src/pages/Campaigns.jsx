@@ -6,7 +6,7 @@ import ConfirmDialog from '../components/UI/ConfirmDialog'
 import Modal from '../components/UI/Modal'
 import Pagination from '../components/UI/Pagination'
 import StatusBadge from '../components/UI/StatusBadge'
-import { HiOutlineTrash, HiOutlineDocumentText, HiOutlineDeviceMobile, HiOutlineGlobe, HiOutlinePlus, HiOutlinePencil, HiOutlineSearch, HiOutlineSpeakerphone, HiOutlineKey, HiOutlineEye, HiOutlineChartBar } from 'react-icons/hi'
+import { HiOutlineTrash, HiOutlineDocumentText, HiOutlineDeviceMobile, HiOutlineGlobe, HiOutlinePlus, HiOutlinePencil, HiOutlineSearch, HiOutlineSpeakerphone, HiOutlineKey, HiOutlineEye, HiOutlineChartBar, HiOutlineRefresh } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -72,6 +72,19 @@ const Campaigns = () => {
   const [keywordForm, setKeywordForm] = useState({ keyword: '', matchType: 'broad', isNegative: false })
   const [showDeleteKeyword, setShowDeleteKeyword] = useState(false)
   const [selectedKeyword, setSelectedKeyword] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+
+  const handleSync = async () => {
+    setSyncing(true)
+    try {
+      const { data } = await api.post('/settings/google-ads-sync')
+      toast.success(data.message || 'Sync complete')
+      loadCampaigns()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Sync failed')
+    }
+    setSyncing(false)
+  }
 
   const loadCampaigns = useCallback(() => {
     dispatch(fetchCampaigns({ page, limit: 10 }))
@@ -252,6 +265,7 @@ const Campaigns = () => {
 
   const columns = [
     { key: 'campaignName', label: 'Campaign Name', sortable: true, filterable: true, render: (row) => <span className="font-medium">{row.campaignName}</span> },
+    { key: 'googleAdsCampaignId', label: 'Google Ads ID', sortable: true, render: (row) => row.googleAdsCampaignId ? <span className="font-mono text-xs text-blue-600 dark:text-blue-400">{row.googleAdsCampaignId}</span> : <span className="text-gray-400 text-xs">-</span> },
     { key: 'status', label: 'Status', filterable: true, filterType: 'select', filterOptions: [{value:'active',label:'Active'},{value:'paused',label:'Paused'},{value:'ended',label:'Ended'},{value:'draft',label:'Draft'}], render: (row) => <StatusBadge status={row.status} /> },
     { key: 'clicks', label: 'Clicks', sortable: true, render: (row) => row.clicks ?? 0 },
     { key: 'impressions', label: 'Impressions', sortable: true, render: (row) => row.impressions ?? 0 },
@@ -318,6 +332,16 @@ const Campaigns = () => {
 
   return (
     <div>
+      <div className="flex justify-end gap-3 mb-6">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50"
+        >
+          <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? 'Syncing...' : 'Sync from Google Ads'}
+        </button>
+      </div>
       <DataTable columns={columns} data={campaigns} loading={loading} emptyMessage="No campaigns found" />
       {pagination && <div className="mt-4"><Pagination currentPage={pagination.page} totalPages={pagination.pages} onPageChange={setPage} /></div>}
 

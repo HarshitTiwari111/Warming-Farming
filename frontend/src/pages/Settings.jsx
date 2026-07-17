@@ -9,9 +9,6 @@ const Settings = () => {
   const [connected, setConnected] = useState(false)
   const [tokenInfo, setTokenInfo] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState(false)
-  const [adsAccounts, setAdsAccounts] = useState([])
-  const [loadingAccounts, setLoadingAccounts] = useState(false)
 
   const checkConnection = async () => {
     setLoading(true)
@@ -25,22 +22,7 @@ const Settings = () => {
     setLoading(false)
   }
 
-  const fetchAdsAccounts = async () => {
-    setLoadingAccounts(true)
-    try {
-      const { data } = await api.get('/settings/google-ads-accounts')
-      setAdsAccounts(data.data || [])
-    } catch (err) {
-      console.error('Failed to fetch Google Ads accounts:', err)
-    }
-    setLoadingAccounts(false)
-  }
-
   useEffect(() => { checkConnection() }, [])
-
-  useEffect(() => {
-    if (connected) fetchAdsAccounts()
-  }, [connected])
 
   const handleConnect = () => {
     const returnUrl = `${window.location.origin}/google-callback`
@@ -51,23 +33,10 @@ const Settings = () => {
     try {
       await api.post('/settings/google-ads-disconnect')
       setConnected(false)
-      setAdsAccounts([])
       toast.success('Google Ads disconnected')
     } catch {
       toast.error('Failed to disconnect')
     }
-  }
-
-  const handleSync = async () => {
-    setSyncing(true)
-    try {
-      const { data } = await api.post('/settings/google-ads-sync')
-      toast.success(data.message || 'Sync complete')
-      fetchAdsAccounts()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Sync failed')
-    }
-    setSyncing(false)
   }
 
   return (
@@ -138,14 +107,6 @@ const Settings = () => {
                 Reconnect with Google
               </button>
               <button
-                onClick={handleSync}
-                disabled={syncing}
-                className="btn-primary flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-              >
-                <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? 'Syncing...' : 'Sync Accounts & Campaigns'}
-              </button>
-              <button
                 onClick={handleDisconnect}
                 className="px-4 py-2 rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"
               >
@@ -165,45 +126,6 @@ const Settings = () => {
           )}
         </div>
       </div>
-
-      {connected && (
-        <div className="card max-w-3xl mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Google Ads Accounts (MCC: 8331500921)</h2>
-          {loadingAccounts ? (
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
-              <HiOutlineRefresh className="w-4 h-4 animate-spin" /> Loading accounts from Google Ads...
-            </div>
-          ) : adsAccounts.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No client accounts found. Click "Sync Accounts & Campaigns" to fetch from Google Ads.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                    <th className="pb-2 font-medium">Customer ID</th>
-                    <th className="pb-2 font-medium">Name</th>
-                    <th className="pb-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {adsAccounts.map((acct) => (
-                    <tr key={acct.customerId} className="border-b border-gray-100 dark:border-gray-700/50">
-                      <td className="py-2 font-mono text-xs">{acct.customerId}</td>
-                      <td className="py-2">{acct.name}</td>
-                      <td className="py-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${acct.status === 'ENABLED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
-                          {acct.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="mt-3 text-xs text-gray-400">{adsAccounts.length} accounts found</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
