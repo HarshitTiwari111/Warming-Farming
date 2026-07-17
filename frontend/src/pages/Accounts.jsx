@@ -59,12 +59,8 @@ const Accounts = () => {
           toast.success(`${result.count} accounts created with campaigns`)
         } else {
           const { count: _, ...createData } = form
-          const result = await dispatch(createAccount(createData)).unwrap()
-          if (result.gadsError) {
-            toast.error(`Google Ads: ${result.gadsError}`)
-          } else {
-            toast.success('Account created with Google Ads ID')
-          }
+          await dispatch(createAccount(createData)).unwrap()
+          toast.success('Account created with campaign')
         }
       }
       setShowModal(false)

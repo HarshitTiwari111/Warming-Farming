@@ -42,7 +42,6 @@ exports.createAccount = asyncHandler(async (req, res) => {
   req.body.owner = req.user._id;
   const account = await Account.create(req.body);
 
-  let gadsMsg = null;
   let googleAdsCampaignId = null;
   const fullUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
   if (fullUser?.googleAdsConnected && fullUser.googleAdsRefreshToken) {
@@ -64,19 +63,15 @@ exports.createAccount = asyncHandler(async (req, res) => {
           googleAdsCampaignId = campResult.campaignId;
         } catch (campErr) {
           console.error('Google Ads campaign creation failed:', campErr.message);
-          gadsMsg = `Account created but campaign failed: ${campErr.message}`;
         }
       }
     } catch (err) {
-      gadsMsg = err.message;
       console.error('Google Ads account creation failed:', err.message);
     }
-  } else {
-    gadsMsg = `Not connected: connected=${fullUser?.googleAdsConnected}, hasToken=${!!fullUser?.googleAdsRefreshToken}`;
   }
 
   const budget = Math.floor(Math.random() * 21) + 20;
-  const campaign = await Campaign.create({
+  await Campaign.create({
     campaignName: `${account.name} - Campaign`,
     account: account._id,
     owner: req.user._id,
@@ -89,9 +84,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
   });
 
   await logActivity(req.user._id, 'account_created', 'account', account._id, `Account ${account.name} created`, req.ip);
-  const resp = { success: true, data: account };
-  if (gadsMsg) resp.gadsError = gadsMsg;
-  res.status(201).json(resp);
+  res.status(201).json({ success: true, data: account });
 });
 
 exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
