@@ -42,6 +42,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
   req.body.owner = req.user._id;
   const account = await Account.create(req.body);
 
+  let gadsMsg = null;
   const fullUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
   if (fullUser?.googleAdsConnected && fullUser.googleAdsRefreshToken) {
     try {
@@ -56,8 +57,11 @@ exports.createAccount = asyncHandler(async (req, res) => {
         await account.save();
       }
     } catch (err) {
+      gadsMsg = err.message;
       console.error('Google Ads account creation failed:', err.message);
     }
+  } else {
+    gadsMsg = `Not connected: connected=${fullUser?.googleAdsConnected}, hasToken=${!!fullUser?.googleAdsRefreshToken}`;
   }
 
   const budget = Math.floor(Math.random() * 21) + 20;
@@ -73,7 +77,9 @@ exports.createAccount = asyncHandler(async (req, res) => {
   });
 
   await logActivity(req.user._id, 'account_created', 'account', account._id, `Account ${account.name} created`, req.ip);
-  res.status(201).json({ success: true, data: account });
+  const resp = { success: true, data: account };
+  if (gadsMsg) resp.gadsError = gadsMsg;
+  res.status(201).json(resp);
 });
 
 exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
