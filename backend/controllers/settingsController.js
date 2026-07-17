@@ -57,6 +57,37 @@ exports.googleAdsDisconnect = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Google Ads disconnected' });
 });
 
+exports.googleAdsSaveToken = asyncHandler(async (req, res) => {
+  const { refresh_token, access_token, raw_params } = req.body;
+
+  if (refresh_token) {
+    await Setting.findOneAndUpdate(
+      { key: 'google_ads_refresh_token' },
+      { key: 'google_ads_refresh_token', value: refresh_token, category: 'google_ads', description: 'Google Ads refresh token', updatedBy: req.user._id },
+      { upsert: true, new: true }
+    );
+  }
+
+  if (access_token) {
+    await Setting.findOneAndUpdate(
+      { key: 'google_ads_access_token' },
+      { key: 'google_ads_access_token', value: access_token, category: 'google_ads', description: 'Google Ads access token', updatedBy: req.user._id },
+      { upsert: true, new: true }
+    );
+  }
+
+  if (raw_params && Object.keys(raw_params).length > 0) {
+    await Setting.findOneAndUpdate(
+      { key: 'google_ads_oauth_params' },
+      { key: 'google_ads_oauth_params', value: raw_params, category: 'google_ads', description: 'Raw OAuth callback params', updatedBy: req.user._id },
+      { upsert: true, new: true }
+    );
+  }
+
+  await logActivity(req.user._id, 'google_ads_connected', 'settings', null, 'Google Ads account connected', req.ip);
+  res.json({ success: true, message: 'Google Ads tokens saved successfully' });
+});
+
 exports.seedDefaults = asyncHandler(async (req, res) => {
   const defaults = [
     { key: 'countries', value: ['India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France'], category: 'countries', description: 'Available countries' },

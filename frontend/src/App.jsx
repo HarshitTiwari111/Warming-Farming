@@ -12,6 +12,7 @@ import Reports from './pages/Reports'
 import Settings from './pages/Settings'
 import Security from './pages/Security'
 import Users from './pages/Users'
+import GoogleCallback from './pages/GoogleCallback'
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useSelector((state) => state.auth)
@@ -29,6 +30,7 @@ const App = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/google-callback" element={<ProtectedRoute><GoogleCallback /></ProtectedRoute>} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="accounts" element={<Accounts />} />
