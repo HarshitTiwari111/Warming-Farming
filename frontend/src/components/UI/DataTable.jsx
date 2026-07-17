@@ -73,42 +73,44 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
   return (
     <div className="card">
       {(hasFilters || actionButtons) && (
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {hasFilters && columns.filter(col => col.filterable).map((col) => (
-            col.filterType === 'select' ? (
-              <select
-                key={`filter-${col.key}`}
-                value={filters[col.key] || ''}
-                onChange={(e) => handleFilterChange(col.key, e.target.value)}
-                className="h-10 px-3 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors shrink-0"
-              >
-                <option value="">{col.label}: All</option>
-                {(col.filterOptions || []).map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            ) : (
-              <div key={`filter-${col.key}`} className="relative min-w-0 flex-1 basis-32 max-w-[180px]">
-                <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
+        <div className="overflow-x-auto mb-4">
+          <div className="flex items-center gap-2 min-w-max">
+            {hasFilters && columns.filter(col => col.filterable).map((col) => (
+              col.filterType === 'select' ? (
+                <select
+                  key={`filter-${col.key}`}
                   value={filters[col.key] || ''}
                   onChange={(e) => handleFilterChange(col.key, e.target.value)}
-                  placeholder={`Search ${col.label.toLowerCase()}...`}
-                  className="w-full h-10 pl-9 pr-3 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
-                />
-              </div>
-            )
-          ))}
-          {Object.values(filters).some(v => v) && (
-            <button
-              onClick={() => setFilters({})}
-              className="h-10 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-colors shrink-0"
-            >
-              Clear
-            </button>
-          )}
-          {actionButtons && <div className="sm:ml-auto flex items-center gap-2 shrink-0">{actionButtons}</div>}
+                  className="h-10 px-3 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors shrink-0"
+                >
+                  <option value="">{col.label}: All</option>
+                  {(col.filterOptions || []).map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <div key={`filter-${col.key}`} className="relative w-40">
+                  <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <input
+                    type="text"
+                    value={filters[col.key] || ''}
+                    onChange={(e) => handleFilterChange(col.key, e.target.value)}
+                    placeholder={`Search ${col.label.toLowerCase()}...`}
+                    className="w-full h-10 pl-9 pr-3 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors"
+                  />
+                </div>
+              )
+            ))}
+            {Object.values(filters).some(v => v) && (
+              <button
+                onClick={() => setFilters({})}
+                className="h-10 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-colors shrink-0"
+              >
+                Clear
+              </button>
+            )}
+            {actionButtons && <div className="ml-auto flex items-center gap-2 shrink-0">{actionButtons}</div>}
+          </div>
         </div>
       )}
       <div className="overflow-x-auto">
