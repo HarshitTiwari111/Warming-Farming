@@ -17,14 +17,21 @@ const seedAdmin = async () => {
   }
 };
 
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    await seedAdmin();
-  } catch (error) {
-    console.error(`MongoDB Connection Error: ${error.message}`);
-    process.exit(1);
+const connectDB = async (retries = 5) => {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      const conn = await mongoose.connect(process.env.MONGODB_URI);
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+      await seedAdmin();
+      return;
+    } catch (error) {
+      console.error(`MongoDB Connection Attempt ${i}/${retries} failed: ${error.message}`);
+      if (i === retries) {
+        console.error('All MongoDB connection attempts failed');
+        process.exit(1);
+      }
+      await new Promise(r => setTimeout(r, 3000));
+    }
   }
 };
 

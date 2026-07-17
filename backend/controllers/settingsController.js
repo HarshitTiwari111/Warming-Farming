@@ -96,6 +96,89 @@ exports.googleAdsSaveToken = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Google Ads tokens saved successfully' });
 });
 
+exports.getGoogleAdsAccounts = asyncHandler(async (req, res) => {
+  const googleAds = require('../services/googleAdsService');
+  const refreshToken = await googleAds.getRefreshToken();
+  if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
+
+  const accounts = await googleAds.fetchClientAccounts(googleAds.MCC_ID, refreshToken);
+  res.json({ success: true, data: accounts });
+});
+
+exports.getGoogleAdsCampaigns = asyncHandler(async (req, res) => {
+  const googleAds = require('../services/googleAdsService');
+  const refreshToken = await googleAds.getRefreshToken();
+  if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
+
+  const { customerId } = req.params;
+  const campaigns = await googleAds.fetchCampaigns(customerId, refreshToken, googleAds.MCC_ID);
+  res.json({ success: true, data: campaigns });
+});
+
+exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
+  const googleAds = require('../services/googleAdsService');
+  const Account = require('../models/Account');
+  const Campaign = require('../models/Campaign');
+  const refreshToken = await googleAds.getRefreshToken();
+  if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
+
+  const clientAccounts = await googleAds.fetchClientAccounts(googleAds.MCC_ID, refreshToken);
+  let synced = 0;
+  let campaignsSynced = 0;
+
+  for (const acct of clientAccounts) {
+    let localAccount = await Account.findOne({ googleAdsCustomerId: acct.customerId });
+    if (!localAccount) {
+      localAccount = await Account.create({
+        name: acct.name || `Account ${acct.customerId}`,
+        googleAdsCustomerId: acct.customerId,
+        inviteEmail: 'synced@googleads.com',
+        status: acct.status === 'ENABLED' ? 'active' : 'paused',
+        createdBy: req.user._id,
+      });
+    } else {
+      localAccount.name = acct.name || localAccount.name;
+      localAccount.status = acct.status === 'ENABLED' ? 'active' : 'paused';
+      await localAccount.save();
+    }
+    synced++;
+
+    try {
+      const campaigns = await googleAds.fetchCampaigns(acct.customerId, refreshToken, googleAds.MCC_ID);
+      for (const camp of campaigns) {
+        const existing = await Campaign.findOne({ googleAdsCampaignId: camp.campaignId, account: localAccount._id });
+        if (!existing) {
+          await Campaign.create({
+            campaignName: camp.campaignName,
+            googleAdsCampaignId: camp.campaignId,
+            account: localAccount._id,
+            status: camp.status === 'ENABLED' ? 'active' : 'paused',
+            clicks: camp.clicks,
+            impressions: camp.impressions,
+            spend: camp.spend,
+            conversions: camp.conversions,
+            createdBy: req.user._id,
+          });
+        } else {
+          existing.campaignName = camp.campaignName;
+          existing.status = camp.status === 'ENABLED' ? 'active' : 'paused';
+          existing.clicks = camp.clicks;
+          existing.impressions = camp.impressions;
+          existing.spend = camp.spend;
+          existing.conversions = camp.conversions;
+          await existing.save();
+        }
+        campaignsSynced++;
+      }
+    } catch (err) {
+      console.error(`Failed to sync campaigns for ${acct.customerId}:`, err.message);
+    }
+  }
+
+  await logActivity(req.user._id, 'google_ads_synced', 'settings', null, `Synced ${synced} accounts, ${campaignsSynced} campaigns`, req.ip);
+  res.json({ success: true, message: `Synced ${synced} accounts and ${campaignsSynced} campaigns` });
+});
+
 exports.seedDefaults = asyncHandler(async (req, res) => {
   const defaults = [
     { key: 'countries', value: ['India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France'], category: 'countries', description: 'Available countries' },
