@@ -7,89 +7,95 @@ const GoogleCallback = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [status, setStatus] = useState('processing')
+  const [debugInfo, setDebugInfo] = useState({})
 
   useEffect(() => {
+    const fullUrl = window.location.href
+    const queryParams = new URLSearchParams(location.search)
+    const hashParams = new URLSearchParams(location.hash.replace('#', '?'))
+
+    const allParams = {}
+    for (const [k, v] of queryParams.entries()) allParams[k] = v
+    for (const [k, v] of hashParams.entries()) allParams[k] = v
+
+    setDebugInfo({ fullUrl, params: allParams, paramCount: Object.keys(allParams).length })
+
+    const refreshToken = allParams.refresh_token || allParams.refreshToken || allParams.token
+    const accessToken = allParams.access_token || allParams.accessToken
+    const code = allParams.code
+
+    const bestToken = refreshToken || accessToken || code
+    || Object.values(allParams).find(v => typeof v === 'string' && v.length > 20)
+
+    if (!bestToken && Object.keys(allParams).length === 0) {
+      setStatus('no_params')
+      return
+    }
+
     const saveTokens = async () => {
-      const queryParams = new URLSearchParams(location.search)
-      const hashParams = new URLSearchParams(location.hash.replace('#', '?'))
-
-      const allParams = {}
-      for (const [k, v] of queryParams.entries()) allParams[k] = v
-      for (const [k, v] of hashParams.entries()) allParams[k] = v
-
-      console.log('Google OAuth callback - Full URL:', window.location.href)
-      console.log('Google OAuth callback - Query params:', Object.fromEntries(queryParams.entries()))
-      console.log('Google OAuth callback - Hash params:', Object.fromEntries(hashParams.entries()))
-      console.log('Google OAuth callback - All params:', allParams)
-
-      const refreshToken = allParams.refresh_token || allParams.refreshToken || allParams.token
-      const accessToken = allParams.access_token || allParams.accessToken
-      const code = allParams.code
-
-      if (!refreshToken && !accessToken && !code && Object.keys(allParams).length === 0) {
-        setStatus('no_params')
-        toast.error('No token received from Google. Check console for details.')
-        setTimeout(() => navigate('/settings'), 3000)
-        return
-      }
-
       try {
         await api.post('/settings/google-ads-save-token', {
-          refresh_token: refreshToken || code,
+          refresh_token: bestToken,
           access_token: accessToken,
           raw_params: allParams
         })
         setStatus('success')
         toast.success('Google Ads connected successfully!')
-        setTimeout(() => navigate('/settings'), 1500)
+        setTimeout(() => navigate('/settings'), 2000)
       } catch (err) {
-        console.error('Save token error:', err)
         setStatus('error')
         toast.error(err.response?.data?.message || 'Failed to save connection')
-        setTimeout(() => navigate('/settings'), 2000)
       }
     }
 
-    saveTokens()
+    if (bestToken) {
+      saveTokens()
+    } else {
+      setStatus('no_token_in_params')
+    }
   }, [location, navigate])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-2xl w-full">
         {status === 'processing' && (
-          <>
+          <div className="text-center">
             <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Connecting Google Ads...</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we save your connection.</p>
-          </>
+          </div>
         )}
         {status === 'success' && (
-          <>
+          <div className="text-center">
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
             <h2 className="text-lg font-semibold text-green-700 dark:text-green-400">Connected!</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Redirecting to settings...</p>
-          </>
+          </div>
         )}
-        {status === 'no_params' && (
-          <>
-            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" /></svg>
+        {(status === 'no_params' || status === 'no_token_in_params' || status === 'error') && (
+          <div>
+            <div className="text-center mb-6">
+              <h2 className="text-lg font-semibold text-yellow-700 dark:text-yellow-400">
+                {status === 'error' ? 'Save Failed' : 'Debug Info'}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Screenshot this page and send it</p>
             </div>
-            <h2 className="text-lg font-semibold text-yellow-700 dark:text-yellow-400">No Token Received</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Open browser console (F12) to see the full callback URL. Redirecting to settings...</p>
-            <p className="text-xs text-gray-400 mt-3 break-all">{window.location.href}</p>
-          </>
-        )}
-        {status === 'error' && (
-          <>
-            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <div className="space-y-3 text-xs">
+              <div>
+                <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Full URL:</p>
+                <p className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg break-all text-gray-600 dark:text-gray-400 select-all">{debugInfo.fullUrl}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Params found ({debugInfo.paramCount}):</p>
+                <pre className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg break-all text-gray-600 dark:text-gray-400 overflow-x-auto select-all">{JSON.stringify(debugInfo.params, null, 2)}</pre>
+              </div>
             </div>
-            <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">Connection Failed</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Redirecting to settings...</p>
-          </>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => navigate('/settings')} className="btn-primary flex-1">Go to Settings</button>
+              <button onClick={() => window.location.reload()} className="btn-secondary flex-1">Retry</button>
+            </div>
+          </div>
         )}
       </div>
     </div>
