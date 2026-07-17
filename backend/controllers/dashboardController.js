@@ -1,9 +1,21 @@
 const Account = require('../models/Account');
 const Campaign = require('../models/Campaign');
+const Setting = require('../models/Setting');
 const ActivityLog = require('../models/ActivityLog');
 const { asyncHandler } = require('../utils/helpers');
 
 exports.getStats = asyncHandler(async (req, res) => {
+  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
+  const mccIds = Array.isArray(mccSetting?.value) && mccSetting.value.length > 0 ? mccSetting.value : [];
+
+  const acctFilter = mccIds.length > 0
+    ? { $or: [{ googleAdsCustomerId: null }, { sourceMccId: { $in: mccIds } }] }
+    : { googleAdsCustomerId: null };
+
+  const campFilter = mccIds.length > 0
+    ? { $or: [{ googleAdsCampaignId: null }, { sourceMccId: { $in: mccIds } }] }
+    : { googleAdsCampaignId: null };
+
   const [
     totalAccounts,
     activeAccounts,
@@ -14,18 +26,18 @@ exports.getStats = asyncHandler(async (req, res) => {
     pausedCampaigns,
     draftCampaigns
   ] = await Promise.all([
-    Account.countDocuments(),
-    Account.countDocuments({ status: 'active' }),
-    Account.countDocuments({ status: 'paused' }),
-    Account.countDocuments({ status: 'pending' }),
-    Campaign.countDocuments(),
-    Campaign.countDocuments({ status: 'active' }),
-    Campaign.countDocuments({ status: 'paused' }),
-    Campaign.countDocuments({ status: 'draft' })
+    Account.countDocuments(acctFilter),
+    Account.countDocuments({ ...acctFilter, status: 'active' }),
+    Account.countDocuments({ ...acctFilter, status: 'paused' }),
+    Account.countDocuments({ ...acctFilter, status: 'pending' }),
+    Campaign.countDocuments(campFilter),
+    Campaign.countDocuments({ ...campFilter, status: 'active' }),
+    Campaign.countDocuments({ ...campFilter, status: 'paused' }),
+    Campaign.countDocuments({ ...campFilter, status: 'draft' })
   ]);
 
   const budgetResult = await Campaign.aggregate([
-    { $match: { status: 'active' } },
+    { $match: { ...campFilter, status: 'active' } },
     { $group: { _id: null, totalBudget: { $sum: '$dailyBudget' }, totalSpend: { $sum: '$spend' } } }
   ]);
 
@@ -33,10 +45,12 @@ exports.getStats = asyncHandler(async (req, res) => {
   const totalSpend = budgetResult.length > 0 ? budgetResult[0].totalSpend : 0;
 
   const campaignsByStatus = await Campaign.aggregate([
+    { $match: campFilter },
     { $group: { _id: '$status', count: { $sum: 1 } } }
   ]);
 
   const campaignsByDevice = await Campaign.aggregate([
+    { $match: campFilter },
     { $group: { _id: '$device', count: { $sum: 1 } } }
   ]);
 

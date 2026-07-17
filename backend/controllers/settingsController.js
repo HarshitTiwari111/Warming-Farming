@@ -164,6 +164,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
         localAccount = await Account.create({
           name: acct.name || `Account ${acct.customerId}`,
           googleAdsCustomerId: acct.customerId,
+          sourceMccId: mccId,
           inviteEmail: 'synced@googleads.com',
           status: acct.status === 'ENABLED' ? 'active' : acct.status === 'REMOVED' ? 'ended' : 'paused',
           createdBy: req.user._id,
@@ -171,6 +172,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
       } else {
         localAccount.name = acct.name || localAccount.name;
         localAccount.status = acct.status === 'ENABLED' ? 'active' : 'paused';
+        localAccount.sourceMccId = mccId;
         await localAccount.save();
       }
       synced++;
@@ -183,6 +185,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
             await Campaign.create({
               campaignName: camp.campaignName,
               googleAdsCampaignId: camp.campaignId,
+              sourceMccId: mccId,
               account: localAccount._id,
               status: camp.status === 'ENABLED' ? 'active' : camp.status === 'REMOVED' ? 'ended' : 'paused',
               clicks: camp.clicks,
@@ -198,6 +201,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
             existing.impressions = camp.impressions;
             existing.spend = camp.spend;
             existing.conversions = camp.conversions;
+            existing.sourceMccId = mccId;
             await existing.save();
           }
           campaignsSynced++;

@@ -4,14 +4,23 @@ const { asyncHandler } = require('../utils/helpers');
 const { logActivity } = require('../middlewares/activityLogger');
 
 exports.getCampaigns = asyncHandler(async (req, res) => {
-  const features = new APIFeatures(Campaign.find(), req.query)
+  const Setting = require('../models/Setting');
+  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
+  const mccIds = Array.isArray(mccSetting?.value) && mccSetting.value.length > 0 ? mccSetting.value : [];
+
+  const mccFilter = mccIds.length > 0
+    ? { $or: [{ googleAdsCampaignId: null }, { sourceMccId: { $in: mccIds } }] }
+    : { googleAdsCampaignId: null };
+
+  const features = new APIFeatures(Campaign.find(mccFilter), req.query)
     .search(['campaignName'])
     .filter()
     .sort()
     .paginate();
 
   const campaigns = await features.query.populate('account', 'name inviteEmail').populate('createdBy', 'name');
-  const total = await Campaign.countDocuments(features.filterObj || {});
+  const combinedFilter = { ...mccFilter, ...(features.filterObj || {}) };
+  const total = await Campaign.countDocuments(combinedFilter);
 
   res.json({
     success: true,
