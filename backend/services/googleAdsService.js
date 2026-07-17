@@ -68,12 +68,12 @@ async function findMccId(refreshToken) {
       if (rows[0]?.customer?.manager === true) return id;
     } catch { /* skip */ }
   }
-  return MCC_ID;
+  return DEFAULT_MCC_ID;
 }
 
 async function fetchClientAccounts(mccId, refreshToken) {
   const query = `SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status FROM customer_client WHERE customer_client.level <= 1`;
-  const rows = await workerQuery(mccId, query, refreshToken);
+  const rows = await workerQuery(mccId, query, refreshToken, mccId);
   return rows
     .filter((r) => r.customerClient && !r.customerClient.manager)
     .map((r) => ({

@@ -162,7 +162,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
           name: acct.name || `Account ${acct.customerId}`,
           googleAdsCustomerId: acct.customerId,
           inviteEmail: 'synced@googleads.com',
-          status: acct.status === 'ENABLED' ? 'active' : 'paused',
+          status: acct.status === 'ENABLED' ? 'active' : acct.status === 'REMOVED' ? 'ended' : 'paused',
           createdBy: req.user._id,
         });
       } else {
@@ -181,7 +181,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
               campaignName: camp.campaignName,
               googleAdsCampaignId: camp.campaignId,
               account: localAccount._id,
-              status: camp.status === 'ENABLED' ? 'active' : 'paused',
+              status: camp.status === 'ENABLED' ? 'active' : camp.status === 'REMOVED' ? 'ended' : 'paused',
               clicks: camp.clicks,
               impressions: camp.impressions,
               spend: camp.spend,
@@ -190,7 +190,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
             });
           } else {
             existing.campaignName = camp.campaignName;
-            existing.status = camp.status === 'ENABLED' ? 'active' : 'paused';
+            existing.status = camp.status === 'ENABLED' ? 'active' : camp.status === 'REMOVED' ? 'ended' : 'paused';
             existing.clicks = camp.clicks;
             existing.impressions = camp.impressions;
             existing.spend = camp.spend;

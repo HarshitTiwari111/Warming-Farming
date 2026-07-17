@@ -11,8 +11,8 @@ const campaignSchema = new mongoose.Schema({
   spend: { type: Number, default: 0 },
   cpc: { type: Number, default: 0 },
   conversions: { type: Number, default: 0 },
-  device: { type: String, enum: ['all', 'mobile', 'desktop', 'tablet'], default: 'all' },
-  country: { type: String, default: 'India' },
+  device: { type: [String], enum: ['all', 'mobile', 'desktop', 'tablet'], default: ['all'] },
+  country: { type: [String], default: ['India'] },
   dailyBudget: { type: Number, default: 30 },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
