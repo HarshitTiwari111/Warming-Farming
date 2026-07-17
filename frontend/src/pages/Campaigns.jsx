@@ -323,10 +323,7 @@ const Campaigns = () => {
         </button>
       ),
     },
-    ...(isAdmin ? [
-      { key: 'owner', label: 'Owner', render: (row) => row.owner ? <span className="text-xs text-gray-600 dark:text-gray-300">{row.owner.name}</span> : <span className="text-gray-400 text-xs">-</span> },
-      { key: 'sourceMccId', label: 'MCC ID', render: (row) => row.sourceMccId ? <span className="font-mono text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded">{row.sourceMccId}</span> : <span className="text-gray-400 text-xs">-</span> },
-    ] : []),
+    ...(isAdmin ? [{ key: 'sourceMccId', label: 'MCC ID', render: (row) => row.sourceMccId ? <span className="font-mono text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded">{row.sourceMccId}</span> : <span className="text-gray-400 text-xs">-</span> }] : []),
     {
       key: 'actions', label: 'Actions', render: (row) => (
         <button onClick={() => { setSelectedCampaign(row); setShowDelete(true) }} className="text-gray-500 hover:text-red-600">
