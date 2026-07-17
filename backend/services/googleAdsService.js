@@ -100,36 +100,58 @@ async function fetchCampaigns(customerId, refreshToken, loginCustomerId) {
   }));
 }
 
+async function findAllMccIds(refreshToken) {
+  const ids = await listAccessibleCustomers(refreshToken);
+  const mccIds = [];
+  for (const id of ids) {
+    try {
+      const rows = await workerQuery(id, 'SELECT customer.id, customer.manager, customer.status FROM customer LIMIT 1', refreshToken);
+      if (rows[0]?.customer?.manager === true) mccIds.push(id);
+    } catch { /* skip suspended */ }
+  }
+  return mccIds;
+}
+
 async function createClientAccount(refreshToken, { name, currencyCode, timeZone }) {
-  const mccId = await findMccId(refreshToken);
-  if (!mccId) throw new Error('No active MCC found');
+  const mccIds = await findAllMccIds(refreshToken);
+  if (!mccIds.length) throw new Error('No active MCC found');
 
-  const url = `${WORKER_BASE}/customers/${mccId}:createCustomerClient`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'x-user-refresh-token': refreshToken,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      customerId: mccId,
-      customerClient: {
-        descriptiveName: name,
-        currencyCode: currencyCode || 'USD',
-        timeZone: timeZone || 'Asia/Kolkata',
-      },
-    }),
-  });
+  let lastError = null;
+  for (const mccId of mccIds) {
+    try {
+      const url = `${WORKER_BASE}/customers/${mccId}:createCustomerClient`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'x-user-refresh-token': refreshToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerId: mccId,
+          customerClient: {
+            descriptiveName: name,
+            currencyCode: currencyCode || 'USD',
+            timeZone: timeZone || 'Asia/Kolkata',
+          },
+        }),
+      });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Create account failed ${response.status}: ${text.substring(0, 500)}`);
+      if (!response.ok) {
+        const text = await response.text();
+        lastError = `MCC ${mccId}: ${response.status} - ${text.substring(0, 200)}`;
+        continue;
+      }
+
+      const data = await response.json();
+      const resourceName = data.resourceName || '';
+      const customerId = resourceName.split('/').pop() || '';
+      return { customerId, mccId };
+    } catch (err) {
+      lastError = `MCC ${mccId}: ${err.message}`;
+    }
   }
 
-  const data = await response.json();
-  const resourceName = data.resourceName || '';
-  const customerId = resourceName.split('/').pop() || '';
-  return { customerId, mccId };
+  throw new Error(lastError || 'All MCCs failed to create account');
 }
 
 async function fetchSearchTerms(customerId, refreshToken, loginCustomerId) {
