@@ -35,12 +35,14 @@ exports.deleteSetting = asyncHandler(async (req, res) => {
 exports.getGoogleAdsStatus = asyncHandler(async (req, res) => {
   const refreshToken = await Setting.findOne({ key: 'google_ads_refresh_token' });
   const rawParams = await Setting.findOne({ key: 'google_ads_oauth_params' });
+  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_id' });
   res.json({
     success: true,
     data: {
       connected: !!(refreshToken?.value),
       refreshToken: refreshToken?.value ? `${String(refreshToken.value).substring(0, 15)}...` : null,
-      rawParams: rawParams?.value || null
+      rawParams: rawParams?.value || null,
+      mccId: mccSetting?.value || ''
     }
   });
 });
@@ -101,7 +103,8 @@ exports.getGoogleAdsAccounts = asyncHandler(async (req, res) => {
   const refreshToken = await googleAds.getRefreshToken();
   if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
 
-  const accounts = await googleAds.fetchClientAccounts(googleAds.MCC_ID, refreshToken);
+  const mccId = await googleAds.getMccId();
+  const accounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
   res.json({ success: true, data: accounts });
 });
 
@@ -110,8 +113,9 @@ exports.getGoogleAdsCampaigns = asyncHandler(async (req, res) => {
   const refreshToken = await googleAds.getRefreshToken();
   if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
 
+  const mccId = await googleAds.getMccId();
   const { customerId } = req.params;
-  const campaigns = await googleAds.fetchCampaigns(customerId, refreshToken, googleAds.MCC_ID);
+  const campaigns = await googleAds.fetchCampaigns(customerId, refreshToken, mccId);
   res.json({ success: true, data: campaigns });
 });
 
@@ -122,7 +126,8 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
   const refreshToken = await googleAds.getRefreshToken();
   if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
 
-  const clientAccounts = await googleAds.fetchClientAccounts(googleAds.MCC_ID, refreshToken);
+  const mccId = await googleAds.getMccId();
+  const clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
   let synced = 0;
   let campaignsSynced = 0;
 
@@ -144,7 +149,7 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
     synced++;
 
     try {
-      const campaigns = await googleAds.fetchCampaigns(acct.customerId, refreshToken, googleAds.MCC_ID);
+      const campaigns = await googleAds.fetchCampaigns(acct.customerId, refreshToken, mccId);
       for (const camp of campaigns) {
         const existing = await Campaign.findOne({ googleAdsCampaignId: camp.campaignId, account: localAccount._id });
         if (!existing) {

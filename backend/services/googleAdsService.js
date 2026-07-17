@@ -1,11 +1,16 @@
 const Setting = require('../models/Setting');
 
 const WORKER_BASE = 'https://secure.dataram.workers.dev/api/v24';
-const MCC_ID = '8331500921';
+const DEFAULT_MCC_ID = '8331500921';
 
 async function getRefreshToken() {
   const setting = await Setting.findOne({ key: 'google_ads_refresh_token' });
   return setting?.value || '';
+}
+
+async function getMccId() {
+  const setting = await Setting.findOne({ key: 'google_ads_mcc_id' });
+  return setting?.value || DEFAULT_MCC_ID;
 }
 
 async function workerQuery(customerId, query, refreshToken, loginCustomerId) {
@@ -100,11 +105,11 @@ async function fetchSearchTerms(customerId, refreshToken, loginCustomerId) {
 
 module.exports = {
   getRefreshToken,
+  getMccId,
   workerQuery,
   listAccessibleCustomers,
   findMccId,
   fetchClientAccounts,
   fetchCampaigns,
   fetchSearchTerms,
-  MCC_ID,
 };

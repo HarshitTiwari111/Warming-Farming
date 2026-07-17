@@ -9,6 +9,8 @@ const Settings = () => {
   const [connected, setConnected] = useState(false)
   const [tokenInfo, setTokenInfo] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [mccId, setMccId] = useState('')
+  const [savingMcc, setSavingMcc] = useState(false)
 
   const checkConnection = async () => {
     setLoading(true)
@@ -16,6 +18,7 @@ const Settings = () => {
       const { data } = await api.get('/settings/google-ads-status')
       setConnected(data.data?.connected || false)
       setTokenInfo(data.data)
+      if (data.data?.mccId) setMccId(data.data.mccId)
     } catch {
       setConnected(false)
     }
@@ -23,6 +26,18 @@ const Settings = () => {
   }
 
   useEffect(() => { checkConnection() }, [])
+
+  const handleSaveMcc = async () => {
+    if (!mccId.trim()) return toast.error('MCC ID required')
+    setSavingMcc(true)
+    try {
+      await api.post('/settings', { key: 'google_ads_mcc_id', value: mccId.trim(), category: 'google_ads', description: 'Google Ads MCC (Manager) Account ID' })
+      toast.success('MCC ID saved')
+    } catch {
+      toast.error('Failed to save MCC ID')
+    }
+    setSavingMcc(false)
+  }
 
   const handleConnect = () => {
     const returnUrl = `${window.location.origin}/google-callback`
@@ -93,6 +108,28 @@ const Settings = () => {
             )}
           </div>
         )}
+
+        <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">MCC (Manager Account) ID</h3>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={mccId}
+              onChange={(e) => setMccId(e.target.value.replace(/\D/g, ''))}
+              placeholder="e.g. 8331500921"
+              className="input-field flex-1 font-mono"
+              maxLength={10}
+            />
+            <button
+              onClick={handleSaveMcc}
+              disabled={savingMcc}
+              className="btn-primary whitespace-nowrap disabled:opacity-50"
+            >
+              {savingMcc ? 'Saving...' : 'Save MCC ID'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">Your Google Ads Manager Account ID (10 digits). This is used to fetch client accounts and campaigns.</p>
+        </div>
 
         <div className="flex flex-wrap gap-3">
           {connected ? (
