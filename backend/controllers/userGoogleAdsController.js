@@ -64,7 +64,7 @@ exports.syncMyAccounts = asyncHandler(async (req, res) => {
   for (const mccId of user.googleAdsMccIds) {
     let clientAccounts;
     try {
-      clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken, user.email);
+      clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
     } catch (err) {
       console.error(`MCC ${mccId} failed for user ${user.email}:`, err.message);
       failedMccs.push(mccId);
@@ -79,7 +79,6 @@ exports.syncMyAccounts = asyncHandler(async (req, res) => {
           googleAdsCustomerId: acct.customerId,
           sourceMccId: mccId,
           owner: user._id,
-          inviteEmail: acct.email || '',
           currency: acct.currency || 'USD',
           timezone: acct.timezone || 'Asia/Kolkata',
           status: acct.status === 'ENABLED' ? 'active' : acct.status === 'REMOVED' ? 'ended' : 'paused',
@@ -89,9 +88,9 @@ exports.syncMyAccounts = asyncHandler(async (req, res) => {
         localAccount.name = acct.name || localAccount.name;
         localAccount.status = acct.status === 'ENABLED' ? 'active' : acct.status === 'REMOVED' ? 'ended' : 'paused';
         localAccount.sourceMccId = mccId;
-        if (acct.email) localAccount.inviteEmail = acct.email;
         if (acct.currency) localAccount.currency = acct.currency;
         if (acct.timezone) localAccount.timezone = acct.timezone;
+        if (localAccount.inviteEmail === user.email) localAccount.inviteEmail = '';
         await localAccount.save();
       }
       synced++;

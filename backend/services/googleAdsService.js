@@ -71,10 +71,10 @@ async function findMccId(refreshToken) {
   return null;
 }
 
-async function fetchClientAccounts(mccId, refreshToken, ownerEmail) {
+async function fetchClientAccounts(mccId, refreshToken) {
   const query = `SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.currency_code, customer_client.time_zone FROM customer_client WHERE customer_client.level <= 1`;
   const rows = await workerQuery(mccId, query, refreshToken, mccId);
-  const accounts = rows
+  return rows
     .filter((r) => r.customerClient && !r.customerClient.manager)
     .map((r) => ({
       customerId: String(r.customerClient.id),
@@ -82,35 +82,7 @@ async function fetchClientAccounts(mccId, refreshToken, ownerEmail) {
       status: r.customerClient.status || 'UNKNOWN',
       currency: r.customerClient.currencyCode || r.customerClient.currency_code || '',
       timezone: r.customerClient.timeZone || r.customerClient.time_zone || '',
-      email: '',
     }));
-
-  const ownerEmailLower = (ownerEmail || '').toLowerCase();
-
-  for (const acct of accounts) {
-    try {
-      const custRows = await workerQuery(
-        acct.customerId,
-        `SELECT customer_user_access.email_address, customer_user_access.access_role FROM customer_user_access`,
-        refreshToken,
-        mccId
-      );
-
-      const allEmails = custRows.map(r => ({
-        email: (r.customerUserAccess?.emailAddress || r.customer_user_access?.email_address || '').toLowerCase(),
-        role: r.customerUserAccess?.accessRole || r.customer_user_access?.access_role || '',
-      })).filter(e => e.email);
-
-      const inviteUser = allEmails.find(e => e.email !== ownerEmailLower) || allEmails[0];
-      if (inviteUser) {
-        acct.email = inviteUser.email;
-      }
-    } catch (err) {
-      console.error(`Failed to fetch user access for account ${acct.customerId}:`, err.message);
-    }
-  }
-
-  return accounts;
 }
 
 async function fetchCampaigns(customerId, refreshToken, loginCustomerId) {
