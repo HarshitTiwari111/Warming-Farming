@@ -100,29 +100,26 @@ async function fetchCampaigns(customerId, refreshToken, loginCustomerId) {
   }));
 }
 
-async function createClientAccount(mccId, refreshToken, { name, currencyCode, timeZone, emailAddress }) {
-  const url = `${WORKER_BASE}/customers/${mccId}:createCustomerClient`;
-  const body = {
-    customer_id: mccId,
-    customer_client: {
-      descriptive_name: name,
-      currency_code: currencyCode || 'USD',
-      time_zone: timeZone || 'Asia/Kolkata',
-    },
-  };
-  if (emailAddress) {
-    body.email_address = emailAddress;
-    body.access_role = 'ADMIN';
-  }
+async function createClientAccount(refreshToken, { name, currencyCode, timeZone }) {
+  const accessibleIds = await listAccessibleCustomers(refreshToken);
+  if (!accessibleIds.length) throw new Error('No MCC found');
+  const mccId = accessibleIds[0];
 
+  const url = `${WORKER_BASE}/customers/${mccId}:createCustomerClient`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'x-user-refresh-token': refreshToken,
-      'login-customer-id': mccId,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      customerId: mccId,
+      customerClient: {
+        descriptiveName: name,
+        currencyCode: currencyCode || 'USD',
+        timeZone: timeZone || 'Asia/Kolkata',
+      },
+    }),
   });
 
   if (!response.ok) {
@@ -132,8 +129,8 @@ async function createClientAccount(mccId, refreshToken, { name, currencyCode, ti
 
   const data = await response.json();
   const resourceName = data.resourceName || '';
-  const customerId = resourceName.replace('customers/', '').replace(/\/customerClients\//, '/').split('/').pop() || '';
-  return { customerId, resourceName };
+  const customerId = resourceName.split('/').pop() || '';
+  return { customerId, mccId };
 }
 
 async function fetchSearchTerms(customerId, refreshToken, loginCustomerId) {
