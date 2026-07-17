@@ -43,6 +43,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
   const account = await Account.create(req.body);
 
   let gadsMsg = null;
+  let googleAdsCampaignId = null;
   const fullUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
   if (fullUser?.googleAdsConnected && fullUser.googleAdsRefreshToken) {
     try {
@@ -55,6 +56,16 @@ exports.createAccount = asyncHandler(async (req, res) => {
         account.googleAdsCustomerId = result.customerId;
         account.sourceMccId = result.mccId;
         await account.save();
+
+        try {
+          const campResult = await googleAds.createGoogleAdsCampaign(
+            result.customerId, account.name, fullUser.googleAdsRefreshToken, result.mccId
+          );
+          googleAdsCampaignId = campResult.campaignId;
+        } catch (campErr) {
+          console.error('Google Ads campaign creation failed:', campErr.message);
+          gadsMsg = `Account created but campaign failed: ${campErr.message}`;
+        }
       }
     } catch (err) {
       gadsMsg = err.message;
@@ -65,7 +76,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
   }
 
   const budget = Math.floor(Math.random() * 21) + 20;
-  await Campaign.create({
+  const campaign = await Campaign.create({
     campaignName: `${account.name} - Campaign`,
     account: account._id,
     owner: req.user._id,
@@ -74,6 +85,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
     country: 'India',
     device: 'all',
     createdBy: req.user._id,
+    ...(googleAdsCampaignId && { googleAdsCampaignId }),
   });
 
   await logActivity(req.user._id, 'account_created', 'account', account._id, `Account ${account.name} created`, req.ip);
@@ -99,6 +111,7 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
       createdBy: req.user._id,
     });
 
+    let googleAdsCampaignId = null;
     if (canCreateGoogleAds) {
       try {
         const result = await googleAds.createClientAccount(fullUser.googleAdsRefreshToken, {
@@ -110,6 +123,14 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
           account.googleAdsCustomerId = result.customerId;
           account.sourceMccId = result.mccId;
           await account.save();
+          try {
+            const campResult = await googleAds.createGoogleAdsCampaign(
+              result.customerId, name, fullUser.googleAdsRefreshToken, result.mccId
+            );
+            googleAdsCampaignId = campResult.campaignId;
+          } catch (campErr) {
+            console.error(`Google Ads campaign failed for ${name}:`, campErr.message);
+          }
         }
       } catch (err) {
         console.error(`Google Ads account creation failed for ${name}:`, err.message);
@@ -126,6 +147,7 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
       country: 'India',
       device: 'all',
       createdBy: req.user._id,
+      ...(googleAdsCampaignId && { googleAdsCampaignId }),
     });
 
     created.push(account);

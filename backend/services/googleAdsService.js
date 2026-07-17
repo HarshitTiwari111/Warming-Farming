@@ -44,6 +44,118 @@ async function workerQuery(customerId, query, refreshToken, loginCustomerId) {
   return Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : [];
 }
 
+async function workerMutate(customerId, operations, refreshToken, loginCustomerId) {
+  const url = `${WORKER_BASE}/customers/${customerId}/googleAds:mutate`;
+  const headers = {
+    'x-user-refresh-token': refreshToken,
+    'Content-Type': 'application/json',
+  };
+  if (loginCustomerId) headers['login-customer-id'] = loginCustomerId;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ mutateOperations: operations }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Mutate ${response.status}: ${text.substring(0, 300)}`);
+  }
+
+  const data = await response.json();
+  return data.mutateOperationResponses || [];
+}
+
+async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mccId) {
+  const ts = Date.now();
+
+  const budgetRes = await workerMutate(customerId, [{
+    campaignBudgetOperation: {
+      create: {
+        name: `Budget_${customerId}_${ts}`,
+        amountMicros: '1000000',
+        deliveryMethod: 'STANDARD',
+        explicitlyShared: false,
+      },
+    },
+  }], refreshToken, mccId);
+  const budgetResource = budgetRes[0]?.campaignBudgetResult?.resourceName;
+  if (!budgetResource) throw new Error('Failed to create campaign budget');
+
+  const campaignRes = await workerMutate(customerId, [{
+    campaignOperation: {
+      create: {
+        name: `${accountName}_Campaign_${ts}`,
+        advertisingChannelType: 'SEARCH',
+        status: 'PAUSED',
+        campaignBudget: budgetResource,
+        manualCpc: {},
+        networkSettings: {
+          targetGoogleSearch: true,
+          targetSearchNetwork: false,
+          targetContentNetwork: false,
+        },
+      },
+    },
+  }], refreshToken, mccId);
+  const campaignResource = campaignRes[0]?.campaignResult?.resourceName;
+  if (!campaignResource) throw new Error('Failed to create campaign');
+
+  const adGroupRes = await workerMutate(customerId, [{
+    adGroupOperation: {
+      create: {
+        name: 'Ad Group 1',
+        campaign: campaignResource,
+        type: 'SEARCH_STANDARD',
+        cpcBidMicros: '500000',
+        status: 'ENABLED',
+      },
+    },
+  }], refreshToken, mccId);
+  const adGroupResource = adGroupRes[0]?.adGroupResult?.resourceName;
+  if (!adGroupResource) throw new Error('Failed to create ad group');
+
+  await workerMutate(customerId, [
+    { adGroupCriterionOperation: { create: { adGroup: adGroupResource, keyword: { text: 'brand awareness', matchType: 'BROAD' }, status: 'ENABLED' } } },
+    { adGroupCriterionOperation: { create: { adGroup: adGroupResource, keyword: { text: 'digital marketing', matchType: 'BROAD' }, status: 'ENABLED' } } },
+    { adGroupCriterionOperation: { create: { adGroup: adGroupResource, keyword: { text: 'online advertising', matchType: 'BROAD' }, status: 'ENABLED' } } },
+  ], refreshToken, mccId);
+
+  await workerMutate(customerId, [{
+    adGroupAdOperation: {
+      create: {
+        adGroup: adGroupResource,
+        ad: {
+          responsiveSearchAd: {
+            headlines: [
+              { text: 'Best Digital Marketing' },
+              { text: 'Grow Your Business' },
+              { text: 'Online Advertising' },
+            ],
+            descriptions: [
+              { text: 'Reach new customers with targeted ads.' },
+              { text: 'Start your campaign today.' },
+            ],
+          },
+          finalUrls: ['https://example.com'],
+        },
+        status: 'ENABLED',
+      },
+    },
+  }], refreshToken, mccId);
+
+  await workerMutate(customerId, [{
+    campaignOperation: {
+      update: { resourceName: campaignResource, status: 'ENABLED' },
+      updateMask: 'status',
+    },
+  }], refreshToken, mccId);
+
+  const campaignId = campaignResource.split('/').pop() || '';
+  return { campaignId, campaignResource };
+}
+
 async function listAccessibleCustomers(refreshToken) {
   const url = `${WORKER_BASE}/customers:listAccessibleCustomers`;
   const response = await fetch(url, {
@@ -170,10 +282,12 @@ module.exports = {
   getMccId,
   getMccIds,
   workerQuery,
+  workerMutate,
   listAccessibleCustomers,
   findMccId,
   fetchClientAccounts,
   createClientAccount,
+  createGoogleAdsCampaign,
   fetchCampaigns,
   fetchSearchTerms,
 };
