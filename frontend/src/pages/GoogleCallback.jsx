@@ -1,38 +1,49 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 
 const GoogleCallback = () => {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [status, setStatus] = useState('processing')
 
   useEffect(() => {
     const saveTokens = async () => {
-      const params = Object.fromEntries(searchParams.entries())
-      console.log('Google OAuth callback params:', params)
+      const queryParams = new URLSearchParams(location.search)
+      const hashParams = new URLSearchParams(location.hash.replace('#', '?'))
 
-      const refreshToken = params.refresh_token || params.refreshToken || params.token || params.code
-      const accessToken = params.access_token || params.accessToken
+      const allParams = {}
+      for (const [k, v] of queryParams.entries()) allParams[k] = v
+      for (const [k, v] of hashParams.entries()) allParams[k] = v
 
-      if (!refreshToken && !accessToken && Object.keys(params).length === 0) {
-        setStatus('error')
-        toast.error('No token received from Google')
-        setTimeout(() => navigate('/settings'), 2000)
+      console.log('Google OAuth callback - Full URL:', window.location.href)
+      console.log('Google OAuth callback - Query params:', Object.fromEntries(queryParams.entries()))
+      console.log('Google OAuth callback - Hash params:', Object.fromEntries(hashParams.entries()))
+      console.log('Google OAuth callback - All params:', allParams)
+
+      const refreshToken = allParams.refresh_token || allParams.refreshToken || allParams.token
+      const accessToken = allParams.access_token || allParams.accessToken
+      const code = allParams.code
+
+      if (!refreshToken && !accessToken && !code && Object.keys(allParams).length === 0) {
+        setStatus('no_params')
+        toast.error('No token received from Google. Check console for details.')
+        setTimeout(() => navigate('/settings'), 3000)
         return
       }
 
       try {
         await api.post('/settings/google-ads-save-token', {
-          refresh_token: refreshToken,
+          refresh_token: refreshToken || code,
           access_token: accessToken,
-          raw_params: params
+          raw_params: allParams
         })
         setStatus('success')
         toast.success('Google Ads connected successfully!')
         setTimeout(() => navigate('/settings'), 1500)
       } catch (err) {
+        console.error('Save token error:', err)
         setStatus('error')
         toast.error(err.response?.data?.message || 'Failed to save connection')
         setTimeout(() => navigate('/settings'), 2000)
@@ -40,7 +51,7 @@ const GoogleCallback = () => {
     }
 
     saveTokens()
-  }, [searchParams, navigate])
+  }, [location, navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
@@ -59,6 +70,16 @@ const GoogleCallback = () => {
             </div>
             <h2 className="text-lg font-semibold text-green-700 dark:text-green-400">Connected!</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Redirecting to settings...</p>
+          </>
+        )}
+        {status === 'no_params' && (
+          <>
+            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18 9 9 0 000-18z" /></svg>
+            </div>
+            <h2 className="text-lg font-semibold text-yellow-700 dark:text-yellow-400">No Token Received</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Open browser console (F12) to see the full callback URL. Redirecting to settings...</p>
+            <p className="text-xs text-gray-400 mt-3 break-all">{window.location.href}</p>
           </>
         )}
         {status === 'error' && (

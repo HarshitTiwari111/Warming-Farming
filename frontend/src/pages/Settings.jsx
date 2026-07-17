@@ -24,8 +24,7 @@ const Settings = () => {
 
   const handleConnect = () => {
     const returnUrl = `${window.location.origin}/google-callback`
-    window.open(`${GOOGLE_AUTH_URL}?return_url=${encodeURIComponent(returnUrl)}`, '_blank')
-    toast.success('Complete the authorization in the new tab')
+    window.location.href = `${GOOGLE_AUTH_URL}?return_url=${encodeURIComponent(returnUrl)}`
   }
 
   const handleDisconnect = async () => {
