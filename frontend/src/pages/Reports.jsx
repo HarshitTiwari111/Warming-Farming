@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { HiOutlineDocumentDownload, HiOutlineSearch } from 'react-icons/hi'
+import { HiOutlineDocumentDownload, HiOutlineSearch, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 import StatusBadge from '../components/UI/StatusBadge'
+
+const PAGE_SIZE = 10
 
 const Reports = () => {
   const [filters, setFilters] = useState({ search: '', country: '', status: '' })
@@ -10,10 +12,15 @@ const Reports = () => {
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null })
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     loadReport()
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters])
 
   const loadReport = async () => {
     setLoading(true)
@@ -66,6 +73,9 @@ const Reports = () => {
     return sortConfig.direction === 'desc' ? -cmp : cmp
   })
 
+  const totalPages = Math.max(1, Math.ceil(sortedCampaigns.length / PAGE_SIZE))
+  const paginatedCampaigns = sortedCampaigns.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
   const SortIcon = ({ col }) => (
     <span className="ml-1 text-gray-400">{sortConfig.key === col ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '◇'}</span>
   )
@@ -107,37 +117,71 @@ const Reports = () => {
         ) : sortedCampaigns.length === 0 ? (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">No campaigns found</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                {[
-                  { key: 'campaignName', label: 'CAMPAIGN' },
-                  { key: 'account', label: 'ACCOUNT' },
-                  { key: 'country', label: 'COUNTRY' },
-                  { key: 'dailyBudget', label: 'BUDGET' },
-                  { key: 'status', label: 'STATUS', sortable: false },
-                ].map(col => (
-                  <th key={col.key}
-                    className={`text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase ${col.sortable !== false ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none' : ''}`}
-                    onClick={() => col.sortable !== false && handleSort(col.key)}
-                  >
-                    {col.label}{col.sortable !== false && <SortIcon col={col.key} />}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedCampaigns.map((row) => (
-                <tr key={row._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                  <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{row.campaignName}</td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{row.account?.name || '-'}</td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{row.country || '-'}</td>
-                  <td className="py-3 px-4 text-gray-900 dark:text-white">${row.dailyBudget ?? 0}</td>
-                  <td className="py-3 px-4"><StatusBadge status={row.status} /></td>
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  {[
+                    { key: 'campaignName', label: 'CAMPAIGN' },
+                    { key: 'account', label: 'ACCOUNT' },
+                    { key: 'country', label: 'COUNTRY' },
+                    { key: 'dailyBudget', label: 'BUDGET' },
+                    { key: 'status', label: 'STATUS', sortable: false },
+                  ].map(col => (
+                    <th key={col.key}
+                      className={`text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase ${col.sortable !== false ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none' : ''}`}
+                      onClick={() => col.sortable !== false && handleSort(col.key)}
+                    >
+                      {col.label}{col.sortable !== false && <SortIcon col={col.key} />}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedCampaigns.map((row) => (
+                  <tr key={row._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{row.campaignName}</td>
+                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{row.account?.name || '-'}</td>
+                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{row.country || '-'}</td>
+                    <td className="py-3 px-4 text-gray-900 dark:text-white">${row.dailyBudget ?? 0}</td>
+                    <td className="py-3 px-4"><StatusBadge status={row.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, sortedCampaigns.length)} of {sortedCampaigns.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <HiOutlineChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium ${page === currentPage ? 'bg-primary-500 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <HiOutlineChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

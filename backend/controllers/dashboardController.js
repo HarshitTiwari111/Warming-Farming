@@ -7,6 +7,7 @@ exports.getStats = asyncHandler(async (req, res) => {
   const [
     totalAccounts,
     activeAccounts,
+    pausedAccounts,
     pendingAccounts,
     totalCampaigns,
     activeCampaigns,
@@ -15,6 +16,7 @@ exports.getStats = asyncHandler(async (req, res) => {
   ] = await Promise.all([
     Account.countDocuments(),
     Account.countDocuments({ status: 'active' }),
+    Account.countDocuments({ status: 'paused' }),
     Account.countDocuments({ status: 'pending' }),
     Campaign.countDocuments(),
     Campaign.countDocuments({ status: 'active' }),
@@ -49,6 +51,7 @@ exports.getStats = asyncHandler(async (req, res) => {
       stats: {
         totalAccounts,
         activeAccounts,
+        pausedAccounts,
         pendingAccounts,
         totalCampaigns,
         activeCampaigns,

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { fetchDashboardStats } from '../store/slices/dashboardSlice'
 import StatsCard from '../components/UI/StatsCard'
 import LoadingSkeleton from '../components/UI/LoadingSkeleton'
-import { HiOutlineUserGroup, HiOutlineCheckCircle, HiOutlineClock, HiOutlineSpeakerphone, HiOutlineCloudUpload, HiOutlineExclamationCircle, HiOutlineCurrencyDollar, HiOutlineFire, HiOutlineTrendingUp } from 'react-icons/hi'
+import { HiOutlineUserGroup, HiOutlineCheckCircle, HiOutlineClock, HiOutlineSpeakerphone, HiOutlinePause, HiOutlinePlay, HiOutlineCurrencyDollar } from 'react-icons/hi'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
@@ -21,17 +21,16 @@ const Dashboard = () => {
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard title="Total Accounts" value={stats?.totalAccounts || 0} icon={HiOutlineUserGroup} color="primary" />
         <StatsCard title="Active Accounts" value={stats?.activeAccounts || 0} icon={HiOutlineCheckCircle} color="green" />
+        <StatsCard title="Paused Accounts" value={stats?.pausedAccounts || 0} icon={HiOutlinePause} color="orange" />
         <StatsCard title="Pending" value={stats?.pendingAccounts || 0} icon={HiOutlineClock} color="yellow" />
-        <StatsCard title="In Warming" value={stats?.warmingAccounts || 0} icon={HiOutlineFire} color="orange" />
-        <StatsCard title="Success Rate" value={`${stats?.successRate || 0}%`} icon={HiOutlineTrendingUp} color="green" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard title="Total Campaigns" value={stats?.totalCampaigns || 0} icon={HiOutlineSpeakerphone} color="blue" />
-        <StatsCard title="Published" value={stats?.publishedCampaigns || 0} icon={HiOutlineCloudUpload} color="green" />
-        <StatsCard title="Failed" value={stats?.failedCampaigns || 0} icon={HiOutlineExclamationCircle} color="red" />
+        <StatsCard title="Active Campaigns" value={stats?.activeCampaigns || 0} icon={HiOutlinePlay} color="green" />
+        <StatsCard title="Paused Campaigns" value={stats?.pausedCampaigns || 0} icon={HiOutlinePause} color="orange" />
         <StatsCard title="Daily Budget" value={`₹${stats?.totalDailyBudget || 0}`} icon={HiOutlineCurrencyDollar} color="purple" />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
