@@ -5,8 +5,8 @@ const { asyncHandler } = require('../utils/helpers');
 
 exports.getStats = asyncHandler(async (req, res) => {
   const isAdmin = req.user.role === 'admin';
-  const acctFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
-  const campFilter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
+  const acctFilter = isAdmin ? { owner: { $ne: null } } : { owner: req.user._id };
+  const campFilter = isAdmin ? { owner: { $ne: null } } : { owner: req.user._id };
 
   const [
     totalAccounts,

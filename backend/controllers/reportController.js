@@ -6,7 +6,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
   const isAdmin = req.user.role === 'admin';
   const { startDate, endDate, campaignId, accountId, country, status } = req.query;
 
-  const filter = isAdmin ? {} : { $or: [{ owner: req.user._id }, { owner: null, createdBy: req.user._id }] };
+  const filter = isAdmin ? { owner: { $ne: null } } : { owner: req.user._id };
   if (startDate && endDate) {
     filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
   }
