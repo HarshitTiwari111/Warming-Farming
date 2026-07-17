@@ -35,16 +35,30 @@ exports.deleteSetting = asyncHandler(async (req, res) => {
 exports.getGoogleAdsStatus = asyncHandler(async (req, res) => {
   const refreshToken = await Setting.findOne({ key: 'google_ads_refresh_token' });
   const rawParams = await Setting.findOne({ key: 'google_ads_oauth_params' });
-  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_id' });
+  const mccSetting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
   res.json({
     success: true,
     data: {
       connected: !!(refreshToken?.value),
       refreshToken: refreshToken?.value ? `${String(refreshToken.value).substring(0, 15)}...` : null,
       rawParams: rawParams?.value || null,
-      mccId: mccSetting?.value || ''
+      mccIds: Array.isArray(mccSetting?.value) ? mccSetting.value : mccSetting?.value ? [mccSetting.value] : []
     }
   });
+});
+
+exports.saveGoogleAdsMccIds = asyncHandler(async (req, res) => {
+  const { mccIds } = req.body;
+  if (!Array.isArray(mccIds)) return res.status(400).json({ success: false, message: 'mccIds must be an array' });
+
+  const cleaned = mccIds.map(id => String(id).replace(/\D/g, '')).filter(id => id.length === 10);
+  await Setting.findOneAndUpdate(
+    { key: 'google_ads_mcc_ids' },
+    { key: 'google_ads_mcc_ids', value: cleaned, category: 'google_ads', description: 'Google Ads MCC Account IDs', updatedBy: req.user._id },
+    { upsert: true, new: true }
+  );
+  await logActivity(req.user._id, 'mcc_ids_updated', 'settings', null, `MCC IDs updated: ${cleaned.join(', ')}`, req.ip);
+  res.json({ success: true, data: cleaned });
 });
 
 exports.getGoogleAdsAuthUrl = asyncHandler(async (req, res) => {
@@ -126,10 +140,12 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
   const refreshToken = await googleAds.getRefreshToken();
   if (!refreshToken) return res.status(400).json({ success: false, message: 'Google Ads not connected' });
 
-  const mccId = await googleAds.getMccId();
-  const clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
+  const mccIds = await googleAds.getMccIds();
   let synced = 0;
   let campaignsSynced = 0;
+
+  for (const mccId of mccIds) {
+  const clientAccounts = await googleAds.fetchClientAccounts(mccId, refreshToken);
 
   for (const acct of clientAccounts) {
     let localAccount = await Account.findOne({ googleAdsCustomerId: acct.customerId });
@@ -179,9 +195,10 @@ exports.syncGoogleAdsAccounts = asyncHandler(async (req, res) => {
       console.error(`Failed to sync campaigns for ${acct.customerId}:`, err.message);
     }
   }
+  } // end mccIds loop
 
-  await logActivity(req.user._id, 'google_ads_synced', 'settings', null, `Synced ${synced} accounts, ${campaignsSynced} campaigns`, req.ip);
-  res.json({ success: true, message: `Synced ${synced} accounts and ${campaignsSynced} campaigns` });
+  await logActivity(req.user._id, 'google_ads_synced', 'settings', null, `Synced ${synced} accounts, ${campaignsSynced} campaigns from ${mccIds.length} MCC(s)`, req.ip);
+  res.json({ success: true, message: `Synced ${synced} accounts and ${campaignsSynced} campaigns from ${mccIds.length} MCC(s)` });
 });
 
 exports.seedDefaults = asyncHandler(async (req, res) => {

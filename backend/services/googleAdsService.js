@@ -8,9 +8,15 @@ async function getRefreshToken() {
   return setting?.value || '';
 }
 
+async function getMccIds() {
+  const setting = await Setting.findOne({ key: 'google_ads_mcc_ids' });
+  if (Array.isArray(setting?.value) && setting.value.length > 0) return setting.value;
+  return [DEFAULT_MCC_ID];
+}
+
 async function getMccId() {
-  const setting = await Setting.findOne({ key: 'google_ads_mcc_id' });
-  return setting?.value || DEFAULT_MCC_ID;
+  const ids = await getMccIds();
+  return ids[0];
 }
 
 async function workerQuery(customerId, query, refreshToken, loginCustomerId) {
@@ -106,6 +112,7 @@ async function fetchSearchTerms(customerId, refreshToken, loginCustomerId) {
 module.exports = {
   getRefreshToken,
   getMccId,
+  getMccIds,
   workerQuery,
   listAccessibleCustomers,
   findMccId,

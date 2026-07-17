@@ -9,7 +9,8 @@ const Settings = () => {
   const [connected, setConnected] = useState(false)
   const [tokenInfo, setTokenInfo] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [mccId, setMccId] = useState('')
+  const [mccIds, setMccIds] = useState([])
+  const [newMccId, setNewMccId] = useState('')
   const [savingMcc, setSavingMcc] = useState(false)
 
   const checkConnection = async () => {
@@ -18,7 +19,7 @@ const Settings = () => {
       const { data } = await api.get('/settings/google-ads-status')
       setConnected(data.data?.connected || false)
       setTokenInfo(data.data)
-      if (data.data?.mccId) setMccId(data.data.mccId)
+      if (data.data?.mccIds?.length) setMccIds(data.data.mccIds)
     } catch {
       setConnected(false)
     }
@@ -27,14 +28,32 @@ const Settings = () => {
 
   useEffect(() => { checkConnection() }, [])
 
-  const handleSaveMcc = async () => {
-    if (!mccId.trim()) return toast.error('MCC ID required')
+  const handleAddMcc = async () => {
+    const id = newMccId.trim()
+    if (!id || id.length !== 10) return toast.error('MCC ID must be 10 digits')
+    if (mccIds.includes(id)) return toast.error('MCC ID already added')
+    const updated = [...mccIds, id]
     setSavingMcc(true)
     try {
-      await api.post('/settings', { key: 'google_ads_mcc_id', value: mccId.trim(), category: 'google_ads', description: 'Google Ads MCC (Manager) Account ID' })
-      toast.success('MCC ID saved')
+      await api.post('/settings/google-ads-mcc-ids', { mccIds: updated })
+      setMccIds(updated)
+      setNewMccId('')
+      toast.success('MCC ID added')
     } catch {
       toast.error('Failed to save MCC ID')
+    }
+    setSavingMcc(false)
+  }
+
+  const handleRemoveMcc = async (id) => {
+    const updated = mccIds.filter(m => m !== id)
+    setSavingMcc(true)
+    try {
+      await api.post('/settings/google-ads-mcc-ids', { mccIds: updated })
+      setMccIds(updated)
+      toast.success('MCC ID removed')
+    } catch {
+      toast.error('Failed to remove MCC ID')
     }
     setSavingMcc(false)
   }
@@ -110,25 +129,41 @@ const Settings = () => {
         )}
 
         <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">MCC (Manager Account) ID</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">MCC (Manager Account) IDs</h3>
+          {mccIds.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {mccIds.map((id) => (
+                <div key={id} className="flex items-center justify-between p-2.5 bg-white dark:bg-gray-600/30 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <span className="font-mono text-sm text-gray-800 dark:text-gray-200">{id}</span>
+                  <button
+                    onClick={() => handleRemoveMcc(id)}
+                    disabled={savingMcc}
+                    className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex items-center gap-3">
             <input
               type="text"
-              value={mccId}
-              onChange={(e) => setMccId(e.target.value.replace(/\D/g, ''))}
+              value={newMccId}
+              onChange={(e) => setNewMccId(e.target.value.replace(/\D/g, ''))}
               placeholder="e.g. 8331500921"
               className="input-field flex-1 font-mono"
               maxLength={10}
             />
             <button
-              onClick={handleSaveMcc}
-              disabled={savingMcc}
+              onClick={handleAddMcc}
+              disabled={savingMcc || newMccId.length !== 10}
               className="btn-primary whitespace-nowrap disabled:opacity-50"
             >
-              {savingMcc ? 'Saving...' : 'Save MCC ID'}
+              {savingMcc ? 'Saving...' : 'Add MCC ID'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-2">Your Google Ads Manager Account ID (10 digits). This is used to fetch client accounts and campaigns.</p>
+          <p className="text-xs text-gray-400 mt-2">Add your Google Ads Manager Account IDs (10 digits each). All MCC accounts will be synced.</p>
         </div>
 
         <div className="flex flex-wrap gap-3">
