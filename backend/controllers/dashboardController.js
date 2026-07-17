@@ -53,6 +53,7 @@ exports.getStats = asyncHandler(async (req, res) => {
     .limit(10);
 
   let adminStats = {};
+  let userBreakdown = [];
   if (isAdmin) {
     const [connectedUsers, totalUsers] = await Promise.all([
       User.countDocuments({ googleAdsConnected: true }),
@@ -61,6 +62,39 @@ exports.getStats = asyncHandler(async (req, res) => {
     const usersWithMcc = await User.find({ googleAdsMccIds: { $exists: true, $ne: [] } }, 'googleAdsMccIds');
     const totalMccIds = usersWithMcc.reduce((sum, u) => sum + (u.googleAdsMccIds?.length || 0), 0);
     adminStats = { connectedUsers, totalUsers, totalMccIds };
+
+    const allUsers = await User.find({}, 'name email role googleAdsConnected googleAdsMccIds googleAdsLastSync');
+    const [acctCounts, campCounts] = await Promise.all([
+      Account.aggregate([
+        { $match: { owner: { $ne: null } } },
+        { $group: { _id: '$owner', total: { $sum: 1 }, active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } }, paused: { $sum: { $cond: [{ $eq: ['$status', 'paused'] }, 1, 0] } } } }
+      ]),
+      Campaign.aggregate([
+        { $match: { owner: { $ne: null } } },
+        { $group: { _id: '$owner', total: { $sum: 1 }, active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } }, paused: { $sum: { $cond: [{ $eq: ['$status', 'paused'] }, 1, 0] } } } }
+      ])
+    ]);
+    const acctMap = {};
+    acctCounts.forEach(a => { acctMap[a._id.toString()] = a; });
+    const campMap = {};
+    campCounts.forEach(c => { campMap[c._id.toString()] = c; });
+
+    userBreakdown = allUsers.map(u => {
+      const uid = u._id.toString();
+      const ac = acctMap[uid] || { total: 0, active: 0, paused: 0 };
+      const ca = campMap[uid] || { total: 0, active: 0, paused: 0 };
+      return {
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        connected: u.googleAdsConnected || false,
+        mccIds: u.googleAdsMccIds || [],
+        lastSync: u.googleAdsLastSync,
+        accounts: { total: ac.total, active: ac.active, paused: ac.paused },
+        campaigns: { total: ca.total, active: ca.active, paused: ca.paused }
+      };
+    });
   }
 
   res.json({
@@ -80,7 +114,8 @@ exports.getStats = asyncHandler(async (req, res) => {
         ...adminStats
       },
       charts: { campaignsByStatus, campaignsByDevice },
-      recentActivity
+      recentActivity,
+      userBreakdown
     }
   });
 });

@@ -16,6 +16,7 @@ const dashboardSlice = createSlice({
     stats: null,
     charts: null,
     recentActivity: [],
+    userBreakdown: [],
     loading: false,
     error: null,
   },
@@ -28,6 +29,7 @@ const dashboardSlice = createSlice({
         state.stats = action.payload?.stats || null
         state.charts = action.payload?.charts || null
         state.recentActivity = action.payload?.recentActivity || []
+        state.userBreakdown = action.payload?.userBreakdown || []
       })
       .addCase(fetchDashboardStats.rejected, (state, action) => {
         state.loading = false
