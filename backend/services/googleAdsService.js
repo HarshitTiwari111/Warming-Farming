@@ -72,7 +72,7 @@ async function findMccId(refreshToken) {
 }
 
 async function fetchClientAccounts(mccId, refreshToken) {
-  const query = `SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status FROM customer_client WHERE customer_client.level <= 1`;
+  const query = `SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.email_address, customer_client.currency_code, customer_client.time_zone FROM customer_client WHERE customer_client.level <= 1`;
   const rows = await workerQuery(mccId, query, refreshToken, mccId);
   return rows
     .filter((r) => r.customerClient && !r.customerClient.manager)
@@ -80,6 +80,9 @@ async function fetchClientAccounts(mccId, refreshToken) {
       customerId: String(r.customerClient.id),
       name: r.customerClient.descriptiveName || '',
       status: r.customerClient.status || 'UNKNOWN',
+      email: r.customerClient.emailAddress || r.customerClient.email_address || '',
+      currency: r.customerClient.currencyCode || r.customerClient.currency_code || '',
+      timezone: r.customerClient.timeZone || r.customerClient.time_zone || '',
     }));
 }
 

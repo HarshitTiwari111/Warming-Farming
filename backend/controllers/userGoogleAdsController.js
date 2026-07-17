@@ -79,7 +79,9 @@ exports.syncMyAccounts = asyncHandler(async (req, res) => {
           googleAdsCustomerId: acct.customerId,
           sourceMccId: mccId,
           owner: user._id,
-          inviteEmail: user.email,
+          inviteEmail: acct.email || user.email,
+          currency: acct.currency || 'USD',
+          timezone: acct.timezone || 'Asia/Kolkata',
           status: acct.status === 'ENABLED' ? 'active' : acct.status === 'REMOVED' ? 'ended' : 'paused',
           createdBy: user._id,
         });
@@ -87,6 +89,9 @@ exports.syncMyAccounts = asyncHandler(async (req, res) => {
         localAccount.name = acct.name || localAccount.name;
         localAccount.status = acct.status === 'ENABLED' ? 'active' : acct.status === 'REMOVED' ? 'ended' : 'paused';
         localAccount.sourceMccId = mccId;
+        if (acct.email) localAccount.inviteEmail = acct.email;
+        if (acct.currency) localAccount.currency = acct.currency;
+        if (acct.timezone) localAccount.timezone = acct.timezone;
         await localAccount.save();
       }
       synced++;
