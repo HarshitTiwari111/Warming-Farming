@@ -15,7 +15,7 @@ exports.getAccounts = asyncHandler(async (req, res) => {
     .sort()
     .paginate();
 
-  const accounts = await features.query.populate('createdBy', 'name email');
+  const accounts = await features.query.populate('createdBy', 'name email').populate('owner', 'name email');
   const combinedFilter = { ...ownerFilter, ...(features.filterObj || {}) };
   const total = await Account.countDocuments(combinedFilter);
 

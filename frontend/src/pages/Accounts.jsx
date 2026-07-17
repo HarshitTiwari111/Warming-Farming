@@ -15,6 +15,8 @@ const initialForm = { name: '', timezone: 'Asia/Kolkata', currency: 'USD', billi
 const Accounts = () => {
   const dispatch = useDispatch()
   const { accounts, pagination, loading } = useSelector((state) => state.accounts)
+  const { user } = useSelector((state) => state.auth)
+  const isAdmin = user?.role === 'admin'
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
@@ -107,6 +109,7 @@ const Accounts = () => {
     { key: 'billingBudget', label: 'Billing Budget', sortable: true, render: (row) => `$${row.billingBudget ?? 0}` },
     { key: 'timezone', label: 'Timezone', sortable: true, filterable: true },
     { key: 'status', label: 'Status', filterable: true, filterType: 'select', filterOptions: [{value:'active',label:'Active'},{value:'pending',label:'Pending'},{value:'suspended',label:'Suspended'},{value:'paused',label:'Paused'}], render: (row) => <StatusBadge status={row.status} /> },
+    ...(isAdmin ? [{ key: 'owner', label: 'Owner', render: (row) => row.owner ? <span className="text-xs text-gray-600 dark:text-gray-300">{row.owner.name}</span> : <span className="text-gray-400 text-xs">-</span> }] : []),
     {
       key: 'actions', label: 'Actions', render: (row) => (
         <div className="flex items-center gap-2">
@@ -120,14 +123,16 @@ const Accounts = () => {
   return (
     <div>
       <div className="flex justify-end gap-3 mb-6">
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50"
-        >
-          <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Syncing...' : 'Sync from Google Ads'}
-        </button>
+        {!isAdmin && (
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync from Google Ads'}
+          </button>
+        )}
         <button onClick={() => { setSelectedAccount(null); setForm(initialForm); setShowModal(true) }} className="btn-primary flex items-center gap-2">
           <HiOutlinePlus className="w-4 h-4" /> Add Accounts
         </button>

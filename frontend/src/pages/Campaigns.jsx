@@ -43,6 +43,8 @@ const COUNTRY_OPTIONS = [
 const Campaigns = () => {
   const dispatch = useDispatch()
   const { campaigns, pagination, loading } = useSelector((state) => state.campaigns)
+  const { user } = useSelector((state) => state.auth)
+  const isAdmin = user?.role === 'admin'
   const [page, setPage] = useState(1)
   const [showDelete, setShowDelete] = useState(false)
   const [selectedCampaign, setSelectedCampaign] = useState(null)
@@ -321,6 +323,7 @@ const Campaigns = () => {
         </button>
       ),
     },
+    ...(isAdmin ? [{ key: 'owner', label: 'Owner', render: (row) => row.owner ? <span className="text-xs text-gray-600 dark:text-gray-300">{row.owner.name}</span> : <span className="text-gray-400 text-xs">-</span> }] : []),
     {
       key: 'actions', label: 'Actions', render: (row) => (
         <button onClick={() => { setSelectedCampaign(row); setShowDelete(true) }} className="text-gray-500 hover:text-red-600">
@@ -332,16 +335,18 @@ const Campaigns = () => {
 
   return (
     <div>
-      <div className="flex justify-end gap-3 mb-6">
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50"
-        >
-          <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Syncing...' : 'Sync from Google Ads'}
-        </button>
-      </div>
+      {!isAdmin && (
+        <div className="flex justify-end gap-3 mb-6">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            <HiOutlineRefresh className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync from Google Ads'}
+          </button>
+        </div>
+      )}
       <DataTable columns={columns} data={campaigns} loading={loading} emptyMessage="No campaigns found" />
       {pagination && <div className="mt-4"><Pagination currentPage={pagination.page} totalPages={pagination.pages} onPageChange={setPage} /></div>}
 

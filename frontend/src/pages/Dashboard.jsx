@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { fetchDashboardStats } from '../store/slices/dashboardSlice'
 import StatsCard from '../components/UI/StatsCard'
 import LoadingSkeleton from '../components/UI/LoadingSkeleton'
-import { HiOutlineUserGroup, HiOutlineCheckCircle, HiOutlineClock, HiOutlineSpeakerphone, HiOutlinePause, HiOutlinePlay, HiOutlineCurrencyDollar } from 'react-icons/hi'
+import { HiOutlineUserGroup, HiOutlineCheckCircle, HiOutlineClock, HiOutlineSpeakerphone, HiOutlinePause, HiOutlinePlay, HiOutlineCurrencyDollar, HiOutlineLink, HiOutlineUsers, HiOutlineCollection } from 'react-icons/hi'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
@@ -11,6 +11,8 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 const Dashboard = () => {
   const dispatch = useDispatch()
   const { stats, charts, loading } = useSelector((state) => state.dashboard)
+  const { user } = useSelector((state) => state.auth)
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => { dispatch(fetchDashboardStats()) }, [dispatch])
 
@@ -21,6 +23,13 @@ const Dashboard = () => {
 
   return (
     <div>
+      {isAdmin && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <StatsCard title="Connected Users" value={`${stats?.connectedUsers || 0} / ${stats?.totalUsers || 0}`} icon={HiOutlineLink} color="green" />
+          <StatsCard title="Total Users" value={stats?.totalUsers || 0} icon={HiOutlineUsers} color="blue" />
+          <StatsCard title="Total MCC IDs" value={stats?.totalMccIds || 0} icon={HiOutlineCollection} color="purple" />
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard title="Total Accounts" value={stats?.totalAccounts || 0} icon={HiOutlineUserGroup} color="primary" />
         <StatsCard title="Active Accounts" value={stats?.activeAccounts || 0} icon={HiOutlineCheckCircle} color="green" />

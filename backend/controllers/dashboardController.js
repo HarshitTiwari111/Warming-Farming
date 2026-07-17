@@ -1,5 +1,6 @@
 const Account = require('../models/Account');
 const Campaign = require('../models/Campaign');
+const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const { asyncHandler } = require('../utils/helpers');
 
@@ -51,6 +52,17 @@ exports.getStats = asyncHandler(async (req, res) => {
     .sort('-createdAt')
     .limit(10);
 
+  let adminStats = {};
+  if (isAdmin) {
+    const [connectedUsers, totalUsers] = await Promise.all([
+      User.countDocuments({ googleAdsConnected: true }),
+      User.countDocuments()
+    ]);
+    const usersWithMcc = await User.find({ googleAdsMccIds: { $exists: true, $ne: [] } }, 'googleAdsMccIds');
+    const totalMccIds = usersWithMcc.reduce((sum, u) => sum + (u.googleAdsMccIds?.length || 0), 0);
+    adminStats = { connectedUsers, totalUsers, totalMccIds };
+  }
+
   res.json({
     success: true,
     data: {
@@ -64,7 +76,8 @@ exports.getStats = asyncHandler(async (req, res) => {
         pausedCampaigns,
         draftCampaigns,
         totalDailyBudget,
-        totalSpend
+        totalSpend,
+        ...adminStats
       },
       charts: { campaignsByStatus, campaignsByDevice },
       recentActivity

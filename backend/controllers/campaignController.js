@@ -13,7 +13,7 @@ exports.getCampaigns = asyncHandler(async (req, res) => {
     .sort()
     .paginate();
 
-  const campaigns = await features.query.populate('account', 'name inviteEmail').populate('createdBy', 'name');
+  const campaigns = await features.query.populate('account', 'name inviteEmail').populate('createdBy', 'name').populate('owner', 'name email');
   const combinedFilter = { ...ownerFilter, ...(features.filterObj || {}) };
   const total = await Campaign.countDocuments(combinedFilter);
 

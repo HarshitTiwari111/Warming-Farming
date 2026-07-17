@@ -16,8 +16,9 @@ exports.generateReport = asyncHandler(async (req, res) => {
   if (status) filter.status = status;
 
   const campaigns = await Campaign.find(filter)
-    .populate('account', 'accountName customerId')
+    .populate('account', 'accountName customerId name')
     .populate('createdBy', 'name')
+    .populate('owner', 'name email')
     .sort('-createdAt');
 
   const summary = {

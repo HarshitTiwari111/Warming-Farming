@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import { HiOutlineDocumentDownload, HiOutlineSearch, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
@@ -7,6 +8,8 @@ import StatusBadge from '../components/UI/StatusBadge'
 const PAGE_SIZE = 10
 
 const Reports = () => {
+  const { user } = useSelector((state) => state.auth)
+  const isAdmin = user?.role === 'admin'
   const [filters, setFilters] = useState({ search: '', country: '', status: '' })
   const [campaigns, setCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
@@ -127,6 +130,7 @@ const Reports = () => {
                     { key: 'country', label: 'COUNTRY' },
                     { key: 'dailyBudget', label: 'BUDGET' },
                     { key: 'status', label: 'STATUS', sortable: false },
+                    ...(isAdmin ? [{ key: 'owner', label: 'OWNER', sortable: false }] : []),
                   ].map(col => (
                     <th key={col.key}
                       className={`text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase ${col.sortable !== false ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none' : ''}`}
@@ -145,6 +149,7 @@ const Reports = () => {
                     <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{row.country || '-'}</td>
                     <td className="py-3 px-4 text-gray-900 dark:text-white">${row.dailyBudget ?? 0}</td>
                     <td className="py-3 px-4"><StatusBadge status={row.status} /></td>
+                    {isAdmin && <td className="py-3 px-4 text-xs text-gray-600 dark:text-gray-300">{row.owner?.name || '-'}</td>}
                   </tr>
                 ))}
               </tbody>
