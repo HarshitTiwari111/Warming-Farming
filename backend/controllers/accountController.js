@@ -42,6 +42,9 @@ exports.createAccount = asyncHandler(async (req, res) => {
   req.body.owner = req.user._id;
   const account = await Account.create(req.body);
 
+  // One budget for both: the local Campaign doc and the Google Ads campaign.
+  const budget = Math.floor(Math.random() * 31) + 80;
+
   let googleAdsCampaignId = null;
   const fullUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
   if (fullUser?.googleAdsConnected && fullUser.googleAdsRefreshToken) {
@@ -58,7 +61,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
 
         try {
           const campResult = await googleAds.createGoogleAdsCampaign(
-            result.customerId, account.name, fullUser.googleAdsRefreshToken, result.mccId
+            result.customerId, account.name, fullUser.googleAdsRefreshToken, result.mccId, budget
           );
           googleAdsCampaignId = campResult.campaignId;
         } catch (campErr) {
@@ -70,7 +73,6 @@ exports.createAccount = asyncHandler(async (req, res) => {
     }
   }
 
-  const budget = Math.floor(Math.random() * 31) + 80;
   await Campaign.create({
     campaignName: `${account.name} - Campaign`,
     account: account._id,
@@ -104,6 +106,9 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
       createdBy: req.user._id,
     });
 
+    // One budget for both: the local Campaign doc and the Google Ads campaign.
+    const budget = Math.floor(Math.random() * 31) + 80;
+
     let googleAdsCampaignId = null;
     if (canCreateGoogleAds) {
       try {
@@ -118,7 +123,7 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
           await account.save();
           try {
             const campResult = await googleAds.createGoogleAdsCampaign(
-              result.customerId, name, fullUser.googleAdsRefreshToken, result.mccId
+              result.customerId, name, fullUser.googleAdsRefreshToken, result.mccId, budget
             );
             googleAdsCampaignId = campResult.campaignId;
           } catch (campErr) {
@@ -130,7 +135,6 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
       }
     }
 
-    const budget = Math.floor(Math.random() * 31) + 80;
     await Campaign.create({
       campaignName: `${name} - Campaign`,
       account: account._id,

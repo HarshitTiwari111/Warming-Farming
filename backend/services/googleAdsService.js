@@ -72,14 +72,16 @@ async function workerMutate(customerId, operations, refreshToken, loginCustomerI
   return response.json();
 }
 
-async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mccId) {
+async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mccId, dailyBudget = 1) {
   const ts = Date.now();
 
   const budgetResult = await workerMutate(customerId, [{
     campaignBudgetOperation: {
       create: {
         name: `Budget_${customerId}_${ts}`,
-        amountMicros: String(1000000),
+        // Same daily budget the dashboard stores on its Campaign doc,
+        // so Google Ads and the dashboard always show the same number.
+        amountMicros: String(Math.round(dailyBudget * 1_000_000)),
         deliveryMethod: 'STANDARD',
         explicitlyShared: false,
       },
