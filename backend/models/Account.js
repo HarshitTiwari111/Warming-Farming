@@ -8,6 +8,7 @@ const accountSchema = new mongoose.Schema({
   timezone: { type: String, required: true, default: 'Asia/Kolkata' },
   currency: { type: String, required: true, default: 'USD' },
   billingBudget: { type: Number, required: true, default: 2 },
+  country: { type: String, default: 'India' },
   inviteEmail: { type: String, default: '', trim: true, lowercase: true },
   autoTagging: { type: Boolean, default: false },
   audienceUnknown: { type: Boolean, default: false },

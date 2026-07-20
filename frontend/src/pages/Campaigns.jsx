@@ -17,29 +17,6 @@ const DEVICE_OPTIONS = [
   { value: 'tablet', label: 'Tablet' },
 ]
 
-const COUNTRY_OPTIONS = [
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria',
-  'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
-  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon',
-  'Canada', 'Cape Verde', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
-  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'East Timor', 'Ecuador',
-  'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland', 'France',
-  'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau',
-  'Guyana', 'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
-  'Israel', 'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo',
-  'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania',
-  'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius',
-  'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia',
-  'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway',
-  'Oman', 'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland',
-  'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino',
-  'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands',
-  'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland',
-  'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey',
-  'Turkmenistan', 'Tuvalu', 'UAE', 'Uganda', 'Ukraine', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu',
-  'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
-]
-
 const Campaigns = () => {
   const dispatch = useDispatch()
   const { campaigns, pagination, loading } = useSelector((state) => state.campaigns)
@@ -50,13 +27,9 @@ const Campaigns = () => {
   const [selectedCampaign, setSelectedCampaign] = useState(null)
 
   const [showDeviceModal, setShowDeviceModal] = useState(false)
-  const [showCountryModal, setShowCountryModal] = useState(false)
   const [showKeywordsModal, setShowKeywordsModal] = useState(false)
   const [modalCampaign, setModalCampaign] = useState(null)
   const [selectedDevices, setSelectedDevices] = useState([])
-  const [selectedCountries, setSelectedCountries] = useState([])
-
-  const [countrySearch, setCountrySearch] = useState('')
 
   const [showAdsModal, setShowAdsModal] = useState(false)
   const [ads, setAds] = useState([])
@@ -115,14 +88,6 @@ const Campaigns = () => {
     setShowDeviceModal(true)
   }
 
-  const openCountryModal = (campaign) => {
-    setModalCampaign(campaign)
-    const countries = campaign.country ? (Array.isArray(campaign.country) ? campaign.country : [campaign.country]) : []
-    setSelectedCountries(countries)
-    setCountrySearch('')
-    setShowCountryModal(true)
-  }
-
   const openAdsModal = async (campaign) => {
     setModalCampaign(campaign)
     setShowAdsModal(true)
@@ -163,12 +128,6 @@ const Campaigns = () => {
     })
   }
 
-  const toggleCountry = (country) => {
-    setSelectedCountries(prev =>
-      prev.includes(country) ? prev.filter(c => c !== country) : [...prev, country]
-    )
-  }
-
   const handleDeviceSave = async () => {
     try {
       await dispatch(updateCampaign({ id: modalCampaign._id, device: selectedDevices })).unwrap()
@@ -179,15 +138,6 @@ const Campaigns = () => {
     }
   }
 
-  const handleCountrySave = async () => {
-    try {
-      await dispatch(updateCampaign({ id: modalCampaign._id, country: selectedCountries })).unwrap()
-      toast.success('Country updated')
-      setShowCountryModal(false)
-    } catch (err) {
-      toast.error(typeof err === 'string' ? err : err?.message || 'Operation failed')
-    }
-  }
 
   const handleKeywordSubmit = async (e) => {
     e.preventDefault()
@@ -303,15 +253,13 @@ const Campaigns = () => {
       ),
     },
     {
+      // Country is chosen at account creation and shown read-only here.
       key: 'country', label: 'Country', sortable: true, filterable: true,
       render: (row) => (
-        <button
-          onClick={() => openCountryModal(row)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
-        >
+        <span className="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
           <HiOutlineGlobe className="w-3.5 h-3.5 text-gray-400" />
           {formatCountries(row.country)}
-        </button>
+        </span>
       ),
     },
     { key: 'dailyBudget', label: 'Daily Budget', sortable: true, render: (row) => `$${row.dailyBudget ?? 0}` },
@@ -397,56 +345,6 @@ const Campaigns = () => {
         <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
           <button onClick={() => setShowDeviceModal(false)} className="btn-secondary">Cancel</button>
           <button onClick={handleDeviceSave} className="btn-primary">Save</button>
-        </div>
-      </Modal>
-
-      {/* Country Modal - Multi Select with Search */}
-      <Modal isOpen={showCountryModal} onClose={() => setShowCountryModal(false)} title="Select Country" size="sm">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-          Choose country targeting for <span className="font-medium text-gray-700 dark:text-gray-300">{modalCampaign?.campaignName}</span>
-        </p>
-        <div className="relative mb-3">
-          <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={countrySearch}
-            onChange={(e) => setCountrySearch(e.target.value)}
-            placeholder="Search country..."
-            className="input-field pl-9"
-          />
-        </div>
-        {selectedCountries.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {selectedCountries.map(c => (
-              <span key={c} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-full text-xs font-medium">
-                {c}
-                <button onClick={() => toggleCountry(c)} className="hover:text-primary-900 dark:hover:text-primary-200">&times;</button>
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="space-y-1.5 mb-6 max-h-64 overflow-y-auto">
-          {COUNTRY_OPTIONS.filter(c => c.toLowerCase().includes(countrySearch.toLowerCase())).map((country) => (
-            <label
-              key={country}
-              className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${selectedCountries.includes(country) ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-            >
-              <input
-                type="checkbox"
-                checked={selectedCountries.includes(country)}
-                onChange={() => toggleCountry(country)}
-                className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{country}</span>
-            </label>
-          ))}
-          {COUNTRY_OPTIONS.filter(c => c.toLowerCase().includes(countrySearch.toLowerCase())).length === 0 && (
-            <p className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">No countries found</p>
-          )}
-        </div>
-        <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-          <button onClick={() => setShowCountryModal(false)} className="btn-secondary">Cancel</button>
-          <button onClick={handleCountrySave} className="btn-primary">Save</button>
         </div>
       </Modal>
 

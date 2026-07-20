@@ -9,8 +9,9 @@ import StatusBadge from '../components/UI/StatusBadge'
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineRefresh } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
+import { COUNTRY_OPTIONS } from '../utils/countries'
 
-const initialForm = { name: '', timezone: 'Asia/Kolkata', currency: 'USD', billingBudget: 2, inviteEmail: '', autoTagging: false, audienceUnknown: false, count: 1 }
+const initialForm = { name: '', timezone: 'Asia/Kolkata', currency: 'USD', billingBudget: 2, country: 'India', inviteEmail: '', autoTagging: false, audienceUnknown: false, count: 1 }
 
 const Accounts = () => {
   const dispatch = useDispatch()
@@ -94,6 +95,7 @@ const Accounts = () => {
       timezone: account.timezone || 'Asia/Kolkata',
       currency: account.currency || 'USD',
       billingBudget: account.billingBudget ?? 2,
+      country: account.country || 'India',
       inviteEmail: account.inviteEmail || '',
       autoTagging: account.autoTagging || false,
       audienceUnknown: account.audienceUnknown || false,
@@ -164,7 +166,7 @@ const Accounts = () => {
                   <label className="block text-xs font-medium text-primary-700 dark:text-primary-300 mb-1">Number of accounts</label>
                   <input type="number" value={form.count} onChange={(e) => setForm({ ...form, count: Math.max(1, parseInt(e.target.value) || 1) })} className="input-field" min="1" max="100" />
                 </div>
-                <p className="flex-1 text-xs text-primary-600 dark:text-primary-400 mt-4">Each account auto-creates 1 campaign ($80-110 budget)</p>
+                <p className="flex-1 text-xs text-primary-600 dark:text-primary-400 mt-4">Each account auto-creates 1 campaign ($80-110 budget, selected country)</p>
               </div>
             </div>
           )}
@@ -206,9 +208,19 @@ const Accounts = () => {
               </select>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Budget ($)</label>
-            <input type="number" value={form.billingBudget} onChange={(e) => setForm({ ...form, billingBudget: Number(e.target.value) })} className="input-field" min="0" />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Budget ($)</label>
+              <input type="number" value={form.billingBudget} onChange={(e) => setForm({ ...form, billingBudget: Number(e.target.value) })} className="input-field" min="0" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country</label>
+              <select value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className="input-field">
+                {COUNTRY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="flex items-center gap-6 pt-1">
             <div className="flex items-center gap-2.5">
