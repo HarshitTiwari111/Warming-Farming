@@ -181,11 +181,25 @@ async function setupAccountBilling(customerId, billingBudget, refreshToken, logi
   const paymentsAccount = paData.paymentsAccounts?.[0]?.resourceName;
   if (!paymentsAccount) throw new Error('No payments account accessible for this customer');
 
-  // 2) Billing setup (skip if the account already has one)
+  // 2) Billing setup. Reuse an approved one; a PENDING one (stuck manual
+  //    wizard attempt) blocks budgets, so cancel it and create a fresh
+  //    setup, which auto-approves under the paying MCC.
   const existing = await workerQuery(customerId,
     'SELECT billing_setup.id, billing_setup.status FROM billing_setup', refreshToken, loginCustomerId);
-  let billingSetupResource = existing[0]?.billingSetup?.resourceName;
+  const approved = existing.find(b => ['APPROVED', 'APPROVED_HELD'].includes(b.billingSetup?.status));
+  let billingSetupResource = approved?.billingSetup?.resourceName;
+
   if (!billingSetupResource) {
+    const pending = existing.find(b => b.billingSetup?.status === 'PENDING');
+    if (pending) {
+      const rmRes = await fetch(`${WORKER_BASE}/customers/${customerId}/billingSetups:mutate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ operation: { remove: pending.billingSetup.resourceName } }),
+      });
+      if (!rmRes.ok) throw new Error(`billingSetup remove ${rmRes.status}: ${(await rmRes.text()).substring(0, 250)}`);
+    }
+
     const bsRes = await fetch(`${WORKER_BASE}/customers/${customerId}/billingSetups:mutate`, {
       method: 'POST',
       headers,
