@@ -22,7 +22,9 @@ const Header = ({ onMenuClick }) => {
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
-    return saved ? JSON.parse(saved) : false
+    if (saved) return JSON.parse(saved)
+    // First visit: follow the OS theme (styling itself only reacts to .dark)
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
   })
 
   useEffect(() => {
