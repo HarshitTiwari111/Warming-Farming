@@ -1,12 +1,21 @@
 import { useState, useMemo } from 'react'
 import { HiOutlineChevronUp, HiOutlineChevronDown, HiOutlineSearch } from 'react-icons/hi'
 
-const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', actionButtons }) => {
+const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', actionButtons, onFilterChange }) => {
   const [filters, setFilters] = useState({})
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null })
 
+  // With onFilterChange the parent filters server-side (across all pages);
+  // without it, filtering stays local to the rows currently loaded.
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
+    const next = { ...filters, [key]: value }
+    setFilters(next)
+    onFilterChange?.(next)
+  }
+
+  const clearFilters = () => {
+    setFilters({})
+    onFilterChange?.({})
   }
 
   const handleSort = (key) => {
@@ -22,17 +31,19 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
   const filteredAndSortedData = useMemo(() => {
     let result = [...(data || [])]
 
-    Object.entries(filters).forEach(([key, value]) => {
-      if (!value) return
-      const col = columns.find(c => c.key === key)
-      result = result.filter(row => {
-        const cellValue = String(row[key] ?? '').toLowerCase()
-        if (col?.filterType === 'select') {
-          return cellValue === value.toLowerCase()
-        }
-        return cellValue.includes(value.toLowerCase())
+    if (!onFilterChange) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (!value) return
+        const col = columns.find(c => c.key === key)
+        result = result.filter(row => {
+          const cellValue = String(row[key] ?? '').toLowerCase()
+          if (col?.filterType === 'select') {
+            return cellValue === value.toLowerCase()
+          }
+          return cellValue.includes(value.toLowerCase())
+        })
       })
-    })
+    }
 
     if (sortConfig.key && sortConfig.direction) {
       result.sort((a, b) => {
@@ -55,18 +66,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
     }
 
     return result
-  }, [data, filters, sortConfig])
-
-  if (loading) {
-    return (
-      <div className="animate-pulse">
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-14 bg-gray-100 dark:bg-gray-800 rounded mb-2" />
-        ))}
-      </div>
-    )
-  }
+  }, [data, filters, sortConfig, columns, onFilterChange])
 
   const hasFilters = columns.some(col => col.filterable)
 
@@ -103,7 +103,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
             ))}
             {Object.values(filters).some(v => v) && (
               <button
-                onClick={() => setFilters({})}
+                onClick={clearFilters}
                 className="h-10 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-colors shrink-0"
               >
                 Clear
@@ -113,6 +113,14 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
           </div>
         </div>
       )}
+      {loading ? (
+        <div className="animate-pulse">
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 bg-gray-100 dark:bg-gray-800 rounded mb-2" />
+          ))}
+        </div>
+      ) : (
       <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
@@ -156,6 +164,7 @@ const DataTable = ({ columns, data, loading, emptyMessage = 'No data found', act
         </tbody>
       </table>
       </div>
+      )}
     </div>
   )
 }

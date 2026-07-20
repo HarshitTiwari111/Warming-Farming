@@ -24,6 +24,7 @@ const Accounts = () => {
   const [form, setForm] = useState(initialForm)
   const [submitting, setSubmitting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [filters, setFilters] = useState({})
 
   const handleSync = async () => {
     setSyncing(true)
@@ -39,10 +40,22 @@ const Accounts = () => {
 
   const loadAccounts = useCallback(() => {
     const params = { page, limit: 10 }
+    if (filters.name) params.search = filters.name
+    if (filters.currency) params.currency = filters.currency
+    if (filters.status) params.status = filters.status
     dispatch(fetchAccounts(params))
-  }, [dispatch, page])
+  }, [dispatch, page, filters])
 
-  useEffect(() => { loadAccounts() }, [loadAccounts])
+  // Debounced so typing in the name search doesn't fire a request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(loadAccounts, 300)
+    return () => clearTimeout(t)
+  }, [loadAccounts])
+
+  const handleFilterChange = useCallback((next) => {
+    setFilters(next)
+    setPage(1)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -139,7 +152,7 @@ const Accounts = () => {
 
   return (
     <div>
-      <DataTable columns={columns} data={accounts} loading={loading} emptyMessage="No accounts found" actionButtons={tableActions} />
+      <DataTable columns={columns} data={accounts} loading={loading} emptyMessage="No accounts found" actionButtons={tableActions} onFilterChange={handleFilterChange} />
       {pagination && <div className="mt-4"><Pagination currentPage={pagination.page} totalPages={pagination.pages} onPageChange={setPage} /></div>}
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={selectedAccount ? 'Edit Account' : 'Add Accounts'}>

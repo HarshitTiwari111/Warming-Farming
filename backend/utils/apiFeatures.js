@@ -11,6 +11,9 @@ class APIFeatures {
       const searchConditions = fields.map(field => ({ [field]: searchRegex }));
       this.query = this.query.find({ $or: searchConditions });
       this.searchFilter = { $or: searchConditions };
+      // Controllers merge filterObj into countDocuments so pagination totals
+      // reflect the same conditions as the data query.
+      this.filterObj = { ...(this.filterObj || {}), $or: searchConditions };
     }
     return this;
   }
@@ -29,7 +32,9 @@ class APIFeatures {
 
     let queryString = JSON.stringify(sanitized);
     queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-    this.query = this.query.find(JSON.parse(queryString));
+    const parsed = JSON.parse(queryString);
+    this.query = this.query.find(parsed);
+    this.filterObj = { ...(this.filterObj || {}), ...parsed };
     return this;
   }
 
