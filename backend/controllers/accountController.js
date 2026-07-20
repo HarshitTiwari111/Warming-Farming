@@ -162,6 +162,41 @@ exports.updateAccount = asyncHandler(async (req, res) => {
   res.json({ success: true, data: account });
 });
 
+exports.sendInvite = asyncHandler(async (req, res) => {
+  const account = await Account.findById(req.params.id);
+  if (!account) return res.status(404).json({ success: false, message: 'Account not found' });
+  if (req.user.role !== 'admin' && account.owner?.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+
+  const email = req.body?.email || account.inviteEmail;
+  if (!email) return res.status(400).json({ success: false, message: 'No invite email set for this account' });
+  if (!account.googleAdsCustomerId) {
+    return res.status(400).json({ success: false, message: 'Account is not linked to Google Ads yet' });
+  }
+
+  // Send with the requester's Google connection; fall back to the account
+  // owner's connection (e.g. when an admin triggers the invite).
+  let tokenUser = await User.findById(req.user._id).select('+googleAdsRefreshToken');
+  if (!tokenUser?.googleAdsRefreshToken && account.owner) {
+    tokenUser = await User.findById(account.owner).select('+googleAdsRefreshToken');
+  }
+  if (!tokenUser?.googleAdsRefreshToken) {
+    return res.status(400).json({ success: false, message: 'No connected Google Ads user available to send the invitation' });
+  }
+
+  try {
+    await googleAds.sendUserAccessInvitation(
+      account.googleAdsCustomerId, email, tokenUser.googleAdsRefreshToken, account.sourceMccId
+    );
+  } catch (err) {
+    return res.status(502).json({ success: false, message: `Failed to send invitation: ${err.message}` });
+  }
+
+  await logActivity(req.user._id, 'invite_sent', 'account', account._id, `Google Ads invite sent to ${email} for ${account.name}`, req.ip);
+  res.json({ success: true, message: `Invitation sent to ${email}` });
+});
+
 exports.deleteAccount = asyncHandler(async (req, res) => {
   const account = await Account.findById(req.params.id);
   if (!account) return res.status(404).json({ success: false, message: 'Account not found' });

@@ -162,6 +162,32 @@ async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mc
   return { campaignId, campaignResource };
 }
 
+// Google emails the invitation itself; accepting it grants the address
+// access to the account (same flow as inviting from the Google Ads UI).
+async function sendUserAccessInvitation(customerId, emailAddress, refreshToken, loginCustomerId) {
+  const url = `${WORKER_BASE}/customers/${customerId}/customerUserAccessInvitations:mutate`;
+  const headers = {
+    'x-user-refresh-token': refreshToken,
+    'Content-Type': 'application/json',
+  };
+  if (loginCustomerId) headers['login-customer-id'] = loginCustomerId;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      operation: { create: { emailAddress, accessRole: 'ADMIN' } },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Invitation ${response.status}: ${text.substring(0, 300)}`);
+  }
+
+  return response.json();
+}
+
 async function listAccessibleCustomers(refreshToken) {
   const url = `${WORKER_BASE}/customers:listAccessibleCustomers`;
   const response = await fetch(url, {
@@ -296,4 +322,5 @@ module.exports = {
   createGoogleAdsCampaign,
   fetchCampaigns,
   fetchSearchTerms,
+  sendUserAccessInvitation,
 };
