@@ -2,6 +2,12 @@ const Setting = require('../models/Setting');
 
 const WORKER_BASE = 'https://secure.dataram.workers.dev/api/v24';
 
+// Final URLs for warmup ads — rotated so both domains get used across accounts.
+const WARMUP_FINAL_URLS = ['https://www.udemy.com/', 'https://www.etsy.com/'];
+function pickWarmupUrl() {
+  return WARMUP_FINAL_URLS[Math.floor(Math.random() * WARMUP_FINAL_URLS.length)];
+}
+
 async function getRefreshToken() {
   const setting = await Setting.findOne({ key: 'google_ads_refresh_token' });
   return setting?.value || '';
@@ -138,7 +144,7 @@ async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mc
               { text: 'Start your campaign today.' },
             ],
           },
-          finalUrls: ['https://example.com'],
+          finalUrls: [pickWarmupUrl()],
         },
         status: 'ENABLED',
       },
