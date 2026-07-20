@@ -1,8 +1,16 @@
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+// Content globs must be absolute: the dev server may run with a cwd
+// outside this folder, and Tailwind resolves relative globs from cwd.
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const fromHere = (rel) => join(__dirname, rel).replace(/\\/g, '/')
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    fromHere('index.html'),
+    fromHere('src/**/*.{js,ts,jsx,tsx}'),
   ],
   darkMode: 'class',
   theme: {
