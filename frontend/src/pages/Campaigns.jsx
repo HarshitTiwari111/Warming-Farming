@@ -6,7 +6,7 @@ import ConfirmDialog from '../components/UI/ConfirmDialog'
 import Modal from '../components/UI/Modal'
 import Pagination from '../components/UI/Pagination'
 import StatusBadge from '../components/UI/StatusBadge'
-import { HiOutlineTrash, HiOutlineDocumentText, HiOutlineDeviceMobile, HiOutlineGlobe, HiOutlinePlus, HiOutlinePencil, HiOutlineSearch, HiOutlineSpeakerphone, HiOutlineKey, HiOutlineEye, HiOutlineChartBar, HiOutlineRefresh } from 'react-icons/hi'
+import { HiOutlineTrash, HiOutlineDocumentText, HiOutlineDeviceMobile, HiOutlinePlus, HiOutlinePencil, HiOutlineSearch, HiOutlineSpeakerphone, HiOutlineKey, HiOutlineEye, HiOutlineChartBar, HiOutlineRefresh } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -242,10 +242,7 @@ const Campaigns = () => {
       // Country is chosen at account creation and shown read-only here.
       key: 'country', label: 'Country', sortable: true, filterable: true,
       render: (row) => (
-        <span className="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
-          <HiOutlineGlobe className="w-3.5 h-3.5 text-gray-400" />
-          {formatCountries(row.country)}
-        </span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">{formatCountries(row.country)}</span>
       ),
     },
     { key: 'dailyBudget', label: 'Daily Budget', sortable: true, render: (row) => `$${row.dailyBudget ?? 0}` },
