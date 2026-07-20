@@ -138,17 +138,29 @@ const Accounts = () => {
     ...(isAdmin ? [{ key: 'sourceMccId', label: 'MCC ID', render: (row) => row.sourceMccId ? <span className="font-mono text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded">{row.sourceMccId}</span> : <span className="text-gray-400 text-xs">-</span> }] : []),
     {
       key: 'actions', label: 'Actions', render: (row) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => handleSendInvite(row)}
             disabled={invitingId === row._id}
-            className="text-gray-500 hover:text-blue-600 disabled:opacity-40"
+            className="p-1.5 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-40"
             title={row.inviteEmail ? `Send Google Ads invite to ${row.inviteEmail}` : 'Send Google Ads invite'}
           >
             <HiOutlineMail className={`w-4 h-4 ${invitingId === row._id ? 'animate-pulse' : ''}`} />
           </button>
-          <button onClick={() => handleEdit(row)} className="text-gray-500 hover:text-primary-600"><HiOutlinePencil className="w-4 h-4" /></button>
-          <button onClick={() => { setSelectedAccount(row); setShowDelete(true) }} className="text-gray-500 hover:text-red-600"><HiOutlineTrash className="w-4 h-4" /></button>
+          <button
+            onClick={() => handleEdit(row)}
+            className="p-1.5 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 transition-colors"
+            title="Edit account"
+          >
+            <HiOutlinePencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => { setSelectedAccount(row); setShowDelete(true) }}
+            className="p-1.5 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 transition-colors"
+            title="Delete account"
+          >
+            <HiOutlineTrash className="w-4 h-4" />
+          </button>
         </div>
       ),
     },
