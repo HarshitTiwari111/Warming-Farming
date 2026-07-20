@@ -182,7 +182,14 @@ async function sendUserAccessInvitation(customerId, emailAddress, refreshToken, 
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Invitation ${response.status}: ${text.substring(0, 300)}`);
+    // Surface Google's human-readable reason (e.g. "An invitation has
+    // already been sent to this email address.") instead of raw JSON.
+    let reason = '';
+    try {
+      const parsed = JSON.parse(text);
+      reason = parsed?.error?.details?.[0]?.errors?.[0]?.message || parsed?.error?.message || '';
+    } catch { /* non-JSON body */ }
+    throw new Error(reason || `Invitation ${response.status}: ${text.substring(0, 300)}`);
   }
 
   return response.json();
