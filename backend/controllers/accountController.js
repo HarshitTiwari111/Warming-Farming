@@ -67,6 +67,14 @@ exports.createAccount = asyncHandler(async (req, res) => {
         } catch (campErr) {
           console.error('Google Ads campaign creation failed:', campErr.message);
         }
+
+        try {
+          await googleAds.setupAccountBilling(
+            result.customerId, account.billingBudget ?? 2, fullUser.googleAdsRefreshToken, result.mccId
+          );
+        } catch (billErr) {
+          console.error('Google Ads billing setup failed:', billErr.message);
+        }
       }
     } catch (err) {
       console.error('Google Ads account creation failed:', err.message);
@@ -128,6 +136,14 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
             googleAdsCampaignId = campResult.campaignId;
           } catch (campErr) {
             console.error(`Google Ads campaign failed for ${name}:`, campErr.message);
+          }
+
+          try {
+            await googleAds.setupAccountBilling(
+              result.customerId, account.billingBudget ?? 2, fullUser.googleAdsRefreshToken, result.mccId
+            );
+          } catch (billErr) {
+            console.error(`Google Ads billing setup failed for ${name}:`, billErr.message);
           }
         }
       } catch (err) {

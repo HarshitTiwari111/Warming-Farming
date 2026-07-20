@@ -164,6 +164,84 @@ async function createGoogleAdsCampaign(customerId, accountName, refreshToken, mc
   return { campaignId, campaignResource };
 }
 
+// Mirrors the manual Billing configuration wizard: link the payments
+// account already used by the paying MCC, then set the account-level
+// budget (spending limit) to the dashboard's billingBudget.
+async function setupAccountBilling(customerId, billingBudget, refreshToken, loginCustomerId) {
+  const headers = {
+    'x-user-refresh-token': refreshToken,
+    'Content-Type': 'application/json',
+  };
+  if (loginCustomerId) headers['login-customer-id'] = loginCustomerId;
+
+  // 1) Payments account reachable for this customer (consolidated billing)
+  const paRes = await fetch(`${WORKER_BASE}/customers/${customerId}/paymentsAccounts`, { method: 'GET', headers });
+  if (!paRes.ok) throw new Error(`paymentsAccounts ${paRes.status}: ${(await paRes.text()).substring(0, 200)}`);
+  const paData = await paRes.json();
+  const paymentsAccount = paData.paymentsAccounts?.[0]?.resourceName;
+  if (!paymentsAccount) throw new Error('No payments account accessible for this customer');
+
+  // 2) Billing setup (skip if the account already has one)
+  const existing = await workerQuery(customerId,
+    'SELECT billing_setup.id, billing_setup.status FROM billing_setup', refreshToken, loginCustomerId);
+  let billingSetupResource = existing[0]?.billingSetup?.resourceName;
+  if (!billingSetupResource) {
+    const bsRes = await fetch(`${WORKER_BASE}/customers/${customerId}/billingSetups:mutate`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ operation: { create: { paymentsAccount, startTimeType: 'NOW' } } }),
+    });
+    const bsText = await bsRes.text();
+    if (!bsRes.ok) throw new Error(`billingSetup ${bsRes.status}: ${bsText.substring(0, 250)}`);
+    billingSetupResource = JSON.parse(bsText)?.result?.resourceName;
+  }
+
+  // 3) Account budget = dashboard billingBudget (spending limit).
+  //    Idempotent: skip when a budget with the same limit already exists,
+  //    UPDATE it when the limit differs, CREATE otherwise.
+  const wantMicros = String(Math.round(billingBudget * 1_000_000));
+  const budgets = await workerQuery(customerId,
+    'SELECT account_budget.id, account_budget.status, account_budget.approved_spending_limit_micros, account_budget.proposed_spending_limit_micros FROM account_budget',
+    refreshToken, loginCustomerId);
+  const current = budgets.find(b => ['APPROVED', 'PENDING'].includes(b.accountBudget?.status));
+  const currentMicros = current?.accountBudget?.approvedSpendingLimitMicros
+    || current?.accountBudget?.proposedSpendingLimitMicros;
+
+  if (current && String(currentMicros) === wantMicros) {
+    return { billingSetupResource, accountBudget: 'already-set' };
+  }
+
+  // Proposals are always "created"; proposalType decides CREATE vs UPDATE.
+  const operation = current
+    ? {
+        create: {
+          proposalType: 'UPDATE',
+          accountBudget: current.accountBudget.resourceName,
+          proposedSpendingLimitMicros: wantMicros,
+        },
+      }
+    : {
+        create: {
+          billingSetup: billingSetupResource,
+          proposalType: 'CREATE',
+          proposedName: 'Account budget',
+          proposedStartTimeType: 'NOW',
+          proposedEndTimeType: 'FOREVER',
+          proposedSpendingLimitMicros: wantMicros,
+        },
+      };
+
+  const abRes = await fetch(`${WORKER_BASE}/customers/${customerId}/accountBudgetProposals:mutate`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ operation }),
+  });
+  const abText = await abRes.text();
+  if (!abRes.ok) throw new Error(`accountBudget ${abRes.status}: ${abText.substring(0, 250)}`);
+
+  return { billingSetupResource };
+}
+
 // Google emails the invitation itself; accepting it grants the address
 // access to the account (same flow as inviting from the Google Ads UI).
 async function sendUserAccessInvitation(customerId, emailAddress, refreshToken, loginCustomerId) {
@@ -332,4 +410,5 @@ module.exports = {
   fetchCampaigns,
   fetchSearchTerms,
   sendUserAccessInvitation,
+  setupAccountBilling,
 };
