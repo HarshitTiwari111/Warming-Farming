@@ -6,7 +6,7 @@ import Modal from '../components/UI/Modal'
 import ConfirmDialog from '../components/UI/ConfirmDialog'
 import Pagination from '../components/UI/Pagination'
 import StatusBadge from '../components/UI/StatusBadge'
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineRefresh } from 'react-icons/hi'
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineRefresh, HiOutlineMail } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 import { COUNTRY_OPTIONS } from '../utils/countries'
@@ -26,6 +26,18 @@ const Accounts = () => {
   const [submitting, setSubmitting] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [filters, setFilters] = useState({})
+  const [invitingId, setInvitingId] = useState(null)
+
+  const handleSendInvite = async (account) => {
+    setInvitingId(account._id)
+    try {
+      const { data } = await api.post(`/accounts/${account._id}/send-invite`)
+      toast.success(data.message || 'Invitation sent')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send invite')
+    }
+    setInvitingId(null)
+  }
 
   const handleSync = async () => {
     setSyncing(true)
@@ -127,6 +139,14 @@ const Accounts = () => {
     {
       key: 'actions', label: 'Actions', render: (row) => (
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleSendInvite(row)}
+            disabled={invitingId === row._id}
+            className="text-gray-500 hover:text-blue-600 disabled:opacity-40"
+            title={row.inviteEmail ? `Send Google Ads invite to ${row.inviteEmail}` : 'Send Google Ads invite'}
+          >
+            <HiOutlineMail className={`w-4 h-4 ${invitingId === row._id ? 'animate-pulse' : ''}`} />
+          </button>
           <button onClick={() => handleEdit(row)} className="text-gray-500 hover:text-primary-600"><HiOutlinePencil className="w-4 h-4" /></button>
           <button onClick={() => { setSelectedAccount(row); setShowDelete(true) }} className="text-gray-500 hover:text-red-600"><HiOutlineTrash className="w-4 h-4" /></button>
         </div>

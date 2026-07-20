@@ -6,7 +6,7 @@ import ConfirmDialog from '../components/UI/ConfirmDialog'
 import Modal from '../components/UI/Modal'
 import Pagination from '../components/UI/Pagination'
 import StatusBadge from '../components/UI/StatusBadge'
-import { HiOutlineTrash, HiOutlineDocumentText, HiOutlineDeviceMobile, HiOutlineGlobe, HiOutlinePlus, HiOutlinePencil, HiOutlineSearch, HiOutlineSpeakerphone, HiOutlineKey, HiOutlineEye, HiOutlineChartBar, HiOutlineRefresh, HiOutlineMail } from 'react-icons/hi'
+import { HiOutlineTrash, HiOutlineDocumentText, HiOutlineDeviceMobile, HiOutlineGlobe, HiOutlinePlus, HiOutlinePencil, HiOutlineSearch, HiOutlineSpeakerphone, HiOutlineKey, HiOutlineEye, HiOutlineChartBar, HiOutlineRefresh } from 'react-icons/hi'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -48,20 +48,6 @@ const Campaigns = () => {
   const [showDeleteKeyword, setShowDeleteKeyword] = useState(false)
   const [selectedKeyword, setSelectedKeyword] = useState(null)
   const [syncing, setSyncing] = useState(false)
-  const [invitingId, setInvitingId] = useState(null)
-
-  const handleSendInvite = async (campaign) => {
-    const account = campaign.account
-    if (!account?._id) return toast.error('Campaign has no linked account')
-    setInvitingId(campaign._id)
-    try {
-      const { data } = await api.post(`/accounts/${account._id}/send-invite`)
-      toast.success(data.message || 'Invitation sent')
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to send invite')
-    }
-    setInvitingId(null)
-  }
 
   const handleSync = async () => {
     setSyncing(true)
@@ -288,19 +274,9 @@ const Campaigns = () => {
     ...(isAdmin ? [{ key: 'sourceMccId', label: 'MCC ID', render: (row) => row.sourceMccId ? <span className="font-mono text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded">{row.sourceMccId}</span> : <span className="text-gray-400 text-xs">-</span> }] : []),
     {
       key: 'actions', label: 'Actions', render: (row) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleSendInvite(row)}
-            disabled={invitingId === row._id}
-            className="text-gray-500 hover:text-blue-600 disabled:opacity-40"
-            title={row.account?.inviteEmail ? `Send Google Ads invite to ${row.account.inviteEmail}` : 'Send Google Ads invite'}
-          >
-            <HiOutlineMail className={`w-4 h-4 ${invitingId === row._id ? 'animate-pulse' : ''}`} />
-          </button>
-          <button onClick={() => { setSelectedCampaign(row); setShowDelete(true) }} className="text-gray-500 hover:text-red-600">
-            <HiOutlineTrash className="w-4 h-4" />
-          </button>
-        </div>
+        <button onClick={() => { setSelectedCampaign(row); setShowDelete(true) }} className="text-gray-500 hover:text-red-600">
+          <HiOutlineTrash className="w-4 h-4" />
+        </button>
       ),
     },
   ]
