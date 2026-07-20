@@ -70,7 +70,7 @@ exports.createAccount = asyncHandler(async (req, res) => {
     }
   }
 
-  const budget = Math.floor(Math.random() * 21) + 20;
+  const budget = Math.floor(Math.random() * 31) + 80;
   await Campaign.create({
     campaignName: `${account.name} - Campaign`,
     account: account._id,
@@ -130,7 +130,7 @@ exports.bulkCreateAccounts = asyncHandler(async (req, res) => {
       }
     }
 
-    const budget = Math.floor(Math.random() * 21) + 20;
+    const budget = Math.floor(Math.random() * 31) + 80;
     await Campaign.create({
       campaignName: `${name} - Campaign`,
       account: account._id,

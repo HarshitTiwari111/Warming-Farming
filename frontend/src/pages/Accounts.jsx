@@ -164,7 +164,7 @@ const Accounts = () => {
                   <label className="block text-xs font-medium text-primary-700 dark:text-primary-300 mb-1">Number of accounts</label>
                   <input type="number" value={form.count} onChange={(e) => setForm({ ...form, count: Math.max(1, parseInt(e.target.value) || 1) })} className="input-field" min="1" max="100" />
                 </div>
-                <p className="flex-1 text-xs text-primary-600 dark:text-primary-400 mt-4">Each account auto-creates 1 campaign ($20-40 budget)</p>
+                <p className="flex-1 text-xs text-primary-600 dark:text-primary-400 mt-4">Each account auto-creates 1 campaign ($80-110 budget)</p>
               </div>
             </div>
           )}
