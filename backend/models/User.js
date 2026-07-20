@@ -55,7 +55,6 @@ const userSchema = new mongoose.Schema({
   trustedDevices: [{ type: String }],
 }, { timestamps: true });
 
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ lockUntil: 1 }, { sparse: true });
 

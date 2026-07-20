@@ -8,7 +8,6 @@ const settingSchema = new mongoose.Schema({
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
-settingSchema.index({ key: 1 });
 settingSchema.index({ category: 1 });
 
 module.exports = mongoose.model('Setting', settingSchema);

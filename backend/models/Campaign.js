@@ -21,6 +21,14 @@ const campaignSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
+// ctr/cpc are derived from clicks/impressions/spend; all writes go through
+// create()/save(), so this hook keeps them consistent.
+campaignSchema.pre('save', function (next) {
+  this.ctr = this.impressions > 0 ? (this.clicks / this.impressions) * 100 : 0;
+  this.cpc = this.clicks > 0 ? this.spend / this.clicks : 0;
+  next();
+});
+
 campaignSchema.index({ account: 1 });
 campaignSchema.index({ status: 1 });
 campaignSchema.index({ country: 1 });
